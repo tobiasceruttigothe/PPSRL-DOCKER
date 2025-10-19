@@ -107,6 +107,13 @@
             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
             <version>2.2.0</version>
         </dependency>
+
+        <!-- Spring Security OAuth2 Resource Server (para JWT) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
     </dependencies>
 
         <!-- revisar -->

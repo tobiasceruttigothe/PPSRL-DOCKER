@@ -1,13 +1,11 @@
 package org.paper.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.NoArgsConstructor;
 
@@ -30,9 +28,14 @@ public class UsuarioCreateDTO {
     @Size(max = 100, message = "La razón social no puede superar los 100 caracteres")
     private String razonSocial;
 
-    @NotBlank(message = "La contraseña es obligatoria")
+    @NotBlank(message = "La contraseña temporal es obligatoria")
     @Size(min = 8, max = 50, message = "La contraseña debe tener entre 8 y 50 caracteres")
     private String password;
+
+    @NotBlank(message = "El rol es obligatorio")
+    @Pattern(regexp = "^(ADMIN|CLIENTE|DISEÑADOR)$",
+            message = "El rol debe ser ADMIN, CLIENTE o DISEÑADOR")
+    private String rol;
 
     @Builder.Default
     private boolean enabled = true;

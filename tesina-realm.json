@@ -29,13 +29,20 @@
       "providerId": "VERIFY_EMAIL",
       "enabled": true,
       "defaultAction": false
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false
     }
   ],
   "roles": {
     "realm": [
       { "name": "ADMIN", "description": "Administrador del sistema" },
-      { "name": "INTERESADO", "description": "Usuario interesado que ha iniciado el proceso de registro" },
-      { "name": "CLIENTE", "description": "Usuario que ha completado el registro y puede usar la aplicación" }
+      { "name": "CLIENTE", "description": "Cliente que puede gestionar proyectos" },
+      { "name": "DISEÑADOR", "description": "Diseñador con permisos específicos" }
     ],
     "client": {
       "realm-management": [],

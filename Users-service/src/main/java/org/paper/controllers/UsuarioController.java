@@ -13,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.paper.dto.ErrorResponse;
 import org.paper.dto.UsuarioCreateDTO;
 import org.paper.dto.UsuarioResponseDTO;
-import org.paper.entity.Usuario;
-import org.paper.entity.UsuarioStatus;
 import org.paper.repository.UsuarioRepository;
-import org.paper.services.UsuarioActivacionService;
 import org.paper.services.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,46 +24,52 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/usuarios")
 @Tag(name = "Usuarios", description = "Gestión de usuarios del sistema")
+@SecurityRequirement(name = "Bearer Authentication")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
     private final UsuarioRepository usuarioRepository;
-    private final UsuarioActivacionService usuarioActivacionService;
 
     public UsuarioController(UsuarioService usuarioService,
-                             UsuarioRepository usuarioRepository,
-                             UsuarioActivacionService usuarioActivacionService) {
+                             UsuarioRepository usuarioRepository) {
         this.usuarioService = usuarioService;
         this.usuarioRepository = usuarioRepository;
-        this.usuarioActivacionService = usuarioActivacionService;
     }
 
     @PostMapping("/create")
     @Operation(
-            summary = "Crear nuevo usuario",
+            summary = "Crear nuevo usuario (solo ADMIN)",
             description = """
-            Crea un nuevo usuario en el sistema. El usuario será creado con rol INTERESADO 
-            y recibirá un email de verificación. El proceso de activación completo puede 
-            tomar hasta 1 minuto.
+            Crea un nuevo usuario en el sistema. Solo los administradores pueden crear usuarios.
             
             **Flujo:**
-            1. Usuario se registra
-            2. Se crea en Keycloak y BD (estado PENDING)
-            3. Job en background asigna rol y envía email
-            4. Usuario verifica email
-            5. Estado cambia a ACTIVE
+            1. Admin crea usuario con rol específico y contraseña temporal
+            2. Usuario recibe email de verificación
+            3. Usuario verifica email y hace login
+            4. Keycloak detecta la contraseña temporal y fuerza el cambio
+            5. Usuario establece su contraseña definitiva
+            
+            **Roles disponibles:** ADMIN, CLIENTE, DISEÑADOR
             """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Usuario creado correctamente",
-                    content = @Content(mediaType = "application/json")
+                    content = @Content(mediaType = "text/plain")
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Datos de entrada inválidos (validación falló)",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No autenticado (token inválido o expirado)"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Sin permisos (solo ADMIN puede crear usuarios)"
             ),
             @ApiResponse(
                     responseCode = "409",
@@ -79,10 +82,14 @@ public class UsuarioController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
-    public ResponseEntity<?> crearUsuario(
+    public ResponseEntity<String> crearUsuario(
             @Valid @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Datos del nuevo usuario. Todos los campos son obligatorios.",
+                    description = """
+                    Datos del nuevo usuario. Todos los campos son obligatorios.
+                    - **rol**: debe ser ADMIN, CLIENTE o DISEÑADOR
+                    - **password**: contraseña temporal (usuario deberá cambiarla en primer login)
+                    """,
                     required = true
             )
             UsuarioCreateDTO usuarioDTO) {
@@ -90,7 +97,6 @@ public class UsuarioController {
     }
 
     @PutMapping("/{userId}/rol/admin")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Asignar rol de administrador",
             description = """
@@ -119,7 +125,6 @@ public class UsuarioController {
     }
 
     @PutMapping("/{userId}/rol/cliente")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Asignar rol de cliente",
             description = """
@@ -147,8 +152,35 @@ public class UsuarioController {
         return ResponseEntity.ok("Rol cambiado a CLIENTE");
     }
 
+    @PutMapping("/{userId}/rol/disenador")
+    @Operation(
+            summary = "Asignar rol de diseñador",
+            description = """
+            Cambia el rol de un usuario a DISEÑADOR.
+            
+            **Requiere:** Rol ADMIN
+            
+            ⚠️ **Nota:** El userId es el UUID de Keycloak, no el username.
+            """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Rol cambiado correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sin permisos"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<String> asignarRolDisenador(
+            @Parameter(
+                    description = "ID del usuario (UUID de Keycloak)",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable String userId) {
+        usuarioService.cambiarRolUsuarioConToken(userId, "DISEÑADOR");
+        return ResponseEntity.ok("Rol cambiado a DISEÑADOR");
+    }
+
     @DeleteMapping("/eliminate/{username}")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Eliminar usuario",
             description = """
@@ -177,7 +209,6 @@ public class UsuarioController {
     }
 
     @GetMapping("/list/users")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Listar todos los usuarios",
             description = """
@@ -198,22 +229,20 @@ public class UsuarioController {
         return usuarioService.listarUsuarios();
     }
 
-    @GetMapping("/list/users/interested")
-    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping("/list/users/disenadores")
     @Operation(
-            summary = "Listar usuarios interesados",
+            summary = "Listar diseñadores",
             description = """
-            Retorna usuarios con rol INTERESADO (usuarios recién registrados).
+            Retorna usuarios con rol DISEÑADOR.
             
             **Requiere:** Rol ADMIN
             """
     )
-    public ResponseEntity<List<UsuarioResponseDTO>> listarUsuariosInteresados() {
-        return usuarioService.listarUsuariosPorRol("INTERESADO");
+    public ResponseEntity<List<UsuarioResponseDTO>> listarUsuariosDisenadores() {
+        return usuarioService.listarUsuariosPorRol("DISEÑADOR");
     }
 
     @GetMapping("/list/users/clients")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Listar usuarios clientes",
             description = """
@@ -227,7 +256,6 @@ public class UsuarioController {
     }
 
     @GetMapping("/list/users/admins")
-    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Listar administradores",
             description = """
@@ -238,73 +266,5 @@ public class UsuarioController {
     )
     public ResponseEntity<List<UsuarioResponseDTO>> listarUsuariosAdmins() {
         return usuarioService.listarUsuariosPorRol("ADMIN");
-    }
-
-    @GetMapping("/failed")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(
-            summary = "Listar usuarios fallidos",
-            description = """
-            Retorna usuarios que fallaron durante el proceso de activación automática 
-            y requieren revisión manual.
-            
-            **Requiere:** Rol ADMIN
-            
-            Estos usuarios pueden ser reintentados manualmente usando el endpoint /retry/{userId}
-            """
-    )
-    public ResponseEntity<List<Usuario>> listarUsuariosFallidos() {
-        log.info("Listando usuarios fallidos");
-        List<Usuario> fallidos = usuarioRepository.findByStatusOrderByFechaRegistroDesc(UsuarioStatus.FAILED);
-        return ResponseEntity.ok(fallidos);
-    }
-
-    @GetMapping("/pending")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(
-            summary = "Listar usuarios pendientes",
-            description = """
-            Retorna usuarios en proceso de activación (estado PENDING).
-            
-            **Requiere:** Rol ADMIN
-            
-            El job en background procesa estos usuarios automáticamente cada 1 minuto.
-            """
-    )
-    public ResponseEntity<List<Usuario>> listarUsuariosPendientes() {
-        log.info("Listando usuarios pendientes");
-        List<Usuario> pendientes = usuarioRepository.findByStatus(UsuarioStatus.PENDING);
-        return ResponseEntity.ok(pendientes);
-    }
-
-    @PostMapping("/retry/{userId}")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(
-            summary = "Reintentar activación de usuario",
-            description = """
-            Reintenta manualmente la activación de un usuario que falló (estado FAILED).
-            
-            **Requiere:** Rol ADMIN
-            
-            El usuario volverá a estado PENDING y será procesado inmediatamente.
-            """
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuario enviado a reprocesamiento"),
-            @ApiResponse(responseCode = "400", description = "El usuario no está en estado FAILED"),
-            @ApiResponse(responseCode = "401", description = "No autenticado"),
-            @ApiResponse(responseCode = "403", description = "Sin permisos"),
-            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-    })
-    public ResponseEntity<String> reintentarUsuario(
-            @Parameter(
-                    description = "ID del usuario (UUID)",
-                    required = true,
-                    example = "550e8400-e29b-41d4-a716-446655440000"
-            )
-            @PathVariable String userId) {
-        log.info("Reintento manual solicitado para usuario: {}", userId);
-        usuarioActivacionService.reintentarUsuarioFallido(userId);
-        return ResponseEntity.ok("Usuario enviado a reprocesamiento");
     }
 }

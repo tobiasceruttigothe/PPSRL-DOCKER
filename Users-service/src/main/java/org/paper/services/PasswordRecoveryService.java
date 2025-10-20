@@ -1,19 +1,17 @@
 package org.paper.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.paper.clients.KeycloakClient;
 import org.paper.exception.UsuarioNotFoundException;
 import org.paper.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio para recuperación y cambio de contraseñas.
+ * Maneja flujos de "olvidé mi contraseña" y cambio de password temporal.
+ */
 @Service
 @Slf4j
 public class PasswordRecoveryService {
@@ -21,19 +19,16 @@ public class PasswordRecoveryService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final KeycloakAdminService keycloakAdminService;
-    private final WebClient webClient;
-
-    @Value("${keycloak.realm}")
-    private String realm;
+    private final KeycloakClient keycloakClient;
 
     public PasswordRecoveryService(JwtUtil jwtUtil,
                                    EmailService emailService,
                                    KeycloakAdminService keycloakAdminService,
-                                   WebClient webClient) {
+                                   KeycloakClient keycloakClient) {
         this.jwtUtil = jwtUtil;
         this.emailService = emailService;
         this.keycloakAdminService = keycloakAdminService;
-        this.webClient = webClient;
+        this.keycloakClient = keycloakClient;
     }
 
     /**
@@ -47,7 +42,7 @@ public class PasswordRecoveryService {
 
         try {
             // Buscar usuario por email en Keycloak
-            Map<String, Object> user = buscarUsuarioPorEmail(email, token);
+            Map<String, Object> user = keycloakClient.buscarUsuarioPorEmail(email, token);
 
             if (user == null) {
                 // Por seguridad, no revelar si el email existe o no
@@ -89,10 +84,10 @@ public class PasswordRecoveryService {
             String adminToken = keycloakAdminService.getAdminToken();
 
             // Cambiar password en Keycloak (NO temporal)
-            cambiarPasswordEnKeycloak(userId, newPassword, false, adminToken);
+            keycloakClient.cambiarPassword(userId, newPassword, false, adminToken);
 
             // Obtener username para el email
-            Map<String, Object> user = obtenerUsuarioPorId(userId, adminToken);
+            Map<String, Object> user = keycloakClient.obtenerUsuarioPorId(userId, adminToken);
             String username = (String) user.get("username");
 
             // Enviar email de confirmación
@@ -116,16 +111,14 @@ public class PasswordRecoveryService {
         String adminToken = keycloakAdminService.getAdminToken();
 
         try {
-            // Verificar que la contraseña actual sea correcta
-            // Esto lo hace Keycloak automáticamente cuando el usuario intenta autenticarse
-            // Aquí solo validamos que el usuario exista
-            Map<String, Object> user = obtenerUsuarioPorId(userId, adminToken);
+            // Verificar que el usuario exista
+            Map<String, Object> user = keycloakClient.obtenerUsuarioPorId(userId, adminToken);
             if (user == null) {
                 throw new UsuarioNotFoundException(userId);
             }
 
             // Cambiar password en Keycloak (NO temporal)
-            cambiarPasswordEnKeycloak(userId, newPassword, false, adminToken);
+            keycloakClient.cambiarPassword(userId, newPassword, false, adminToken);
 
             // Enviar email de confirmación
             String email = (String) user.get("email");
@@ -137,68 +130,6 @@ public class PasswordRecoveryService {
         } catch (Exception e) {
             log.error("Error al cambiar contraseña temporal: {}", e.getMessage(), e);
             throw new RuntimeException("No se pudo cambiar la contraseña temporal", e);
-        }
-    }
-
-    // ==================== MÉTODOS PRIVADOS ====================
-
-    private Map<String, Object> buscarUsuarioPorEmail(String email, String token) {
-        try {
-            List<Map<String, Object>> users = webClient.get()
-                    .uri("/admin/realms/{realm}/users?email={email}&exact=true", realm, email)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .retrieve()
-                    .bodyToFlux(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .collectList()
-                    .block();
-
-            if (users == null || users.isEmpty()) {
-                return null;
-            }
-
-            return users.get(0);
-
-        } catch (WebClientResponseException e) {
-            log.error("Error buscando usuario por email: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private Map<String, Object> obtenerUsuarioPorId(String userId, String token) {
-        try {
-            return webClient.get()
-                    .uri("/admin/realms/{realm}/users/{id}", realm, userId)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .block();
-        } catch (WebClientResponseException e) {
-            log.error("Error obteniendo usuario por ID: {}", e.getMessage());
-            throw new UsuarioNotFoundException(userId);
-        }
-    }
-
-    private void cambiarPasswordEnKeycloak(String userId, String newPassword, boolean temporary, String token) {
-        String passwordJson = String.format(
-                "{\"type\":\"password\",\"value\":\"%s\",\"temporary\":%b}",
-                newPassword, temporary
-        );
-
-        try {
-            webClient.put()
-                    .uri("/admin/realms/{realm}/users/{id}/reset-password", realm, userId)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(passwordJson)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block();
-
-            log.info("Contraseña actualizada en Keycloak para userId: {}", userId);
-
-        } catch (WebClientResponseException e) {
-            log.error("Error cambiando password en Keycloak: {}", e.getMessage());
-            throw new RuntimeException("No se pudo cambiar la contraseña en Keycloak", e);
         }
     }
 }

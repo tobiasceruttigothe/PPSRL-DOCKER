@@ -6,7 +6,6 @@ import org.mockito.Mockito;
 import org.paper.dto.UsuarioCreateDTO;
 import org.paper.dto.UsuarioResponseDTO;
 import org.paper.repository.UsuarioRepository;
-import org.paper.services.UsuarioActivacionService;
 import org.paper.services.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,21 +34,20 @@ class UsuarioControllerTest {
     @MockBean
     private UsuarioRepository usuarioRepository;
 
-    @MockBean
-    private UsuarioActivacionService usuarioActivacionService;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
     void testCrearUsuario() throws Exception {
-        UsuarioCreateDTO dto = new UsuarioCreateDTO();
-        dto.setUsername("testUser");
-        dto.setEmail("test@example.com");
-        dto.setRazonSocial("MiEmpresa");
-        dto.setPassword("Password123");
-        dto.setEnabled(true);
-        dto.setEmailVerified(false);
+        UsuarioCreateDTO dto = UsuarioCreateDTO.builder()
+                .username("testUser")
+                .email("test@example.com")
+                .razonSocial("MiEmpresa")
+                .password("Password123")
+                .rol("CLIENTE")
+                .enabled(true)
+                .emailVerified(false)
+                .build();
 
         when(usuarioService.crearUsuario(any(UsuarioCreateDTO.class)))
                 .thenReturn(ResponseEntity.ok("Usuario creado correctamente"));
@@ -77,6 +75,15 @@ class UsuarioControllerTest {
                 .andExpect(content().string("Rol cambiado a CLIENTE"));
 
         Mockito.verify(usuarioService).cambiarRolUsuarioConToken("123", "CLIENTE");
+    }
+
+    @Test
+    void testAsignarRolDisenador() throws Exception {
+        mockMvc.perform(put("/api/usuarios/123/rol/disenador"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Rol cambiado a DISEÑADOR"));
+
+        Mockito.verify(usuarioService).cambiarRolUsuarioConToken("123", "DISEÑADOR");
     }
 
     @Test
@@ -127,11 +134,11 @@ class UsuarioControllerTest {
     }
 
     @Test
-    void testListarUsuariosInteresados() throws Exception {
-        when(usuarioService.listarUsuariosPorRol("INTERESADO"))
+    void testListarUsuariosDisenadores() throws Exception {
+        when(usuarioService.listarUsuariosPorRol("DISEÑADOR"))
                 .thenReturn(ResponseEntity.ok(List.of()));
 
-        mockMvc.perform(get("/api/usuarios/list/users/interested"))
+        mockMvc.perform(get("/api/usuarios/list/users/disenadores"))
                 .andExpect(status().isOk());
     }
 }

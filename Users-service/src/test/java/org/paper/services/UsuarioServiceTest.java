@@ -26,12 +26,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
-    @Mock private KeycloakAdminService keycloakAdminService;
-    @Mock private UsuarioRepository usuarioRepository;
-    @Mock private KeycloakClient keycloakClient;
-    @Mock private EmailVerificationService emailVerificationService;
+    @Mock
+    private KeycloakAdminService keycloakAdminService;
 
-    @InjectMocks private UsuarioService usuarioService;
+    @Mock
+    private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private KeycloakClient keycloakClient;
+
+    @Mock
+    private EmailVerificationService emailVerificationService;
+
+    @InjectMocks
+    private UsuarioService usuarioService;
 
     @BeforeEach
     void setUp() {
@@ -41,16 +49,32 @@ class UsuarioServiceTest {
     @Test
     void testCrearUsuario_ok() {
         // Arrange
-        UsuarioCreateDTO dto = new UsuarioCreateDTO("testUser", "test@example.com", "password123", "MiEmpresa", true, false);
+        UsuarioCreateDTO dto = UsuarioCreateDTO.builder()
+                .username("testUser")
+                .email("test@example.com")
+                .razonSocial("MiEmpresa")
+                .password("Password123")
+                .rol("CLIENTE")
+                .enabled(true)
+                .emailVerified(false)
+                .build();
+
         String newUserId = UUID.randomUUID().toString();
 
         when(keycloakClient.obtenerUserId(eq("testUser"), anyString()))
-            .thenReturn(null) // First call: user doesn't exist
-            .thenReturn(newUserId); // Second call: user exists after creation
+                .thenReturn(null) // Primera llamada: usuario no existe
+                .thenReturn(newUserId); // Segunda llamada: usuario existe después de crearlo
 
         doNothing().when(keycloakClient).crearUsuario(any(UsuarioCreateDTO.class), anyString());
-        doNothing().when(keycloakClient).asignarPassword(eq(newUserId), eq(dto.getPassword()), anyString());
+        doNothing().when(keycloakClient).asignarPasswordTemporal(eq(newUserId), eq(dto.getPassword()), anyString());
+        doNothing().when(emailVerificationService).createAndSendVerification(anyString(), anyString(), anyString());
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Mock para cambio de rol
+        when(keycloakClient.listarRolesDeUsuario(anyString(), anyString())).thenReturn(java.util.Collections.emptyList());
+        when(keycloakClient.obtenerRolPorNombre(eq("CLIENTE"), anyString()))
+                .thenReturn(java.util.Map.of("name", "CLIENTE", "id", "role-id"));
+        doNothing().when(keycloakClient).agregarRolesAUsuario(anyString(), any(), anyString());
 
         // Act
         ResponseEntity<String> response = usuarioService.crearUsuario(dto);
@@ -59,12 +83,22 @@ class UsuarioServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().contains("Usuario creado correctamente"));
         verify(usuarioRepository).save(any(Usuario.class));
+        verify(keycloakClient).asignarPasswordTemporal(eq(newUserId), eq(dto.getPassword()), anyString());
     }
 
     @Test
     void testCrearUsuario_fallaPorUsuarioYaExistente() {
         // Arrange
-        UsuarioCreateDTO dto = new UsuarioCreateDTO("testUser", "test@example.com", "password123", "MiEmpresa", true, false);
+        UsuarioCreateDTO dto = UsuarioCreateDTO.builder()
+                .username("testUser")
+                .email("test@example.com")
+                .razonSocial("MiEmpresa")
+                .password("Password123")
+                .rol("CLIENTE")
+                .enabled(true)
+                .emailVerified(false)
+                .build();
+
         when(keycloakClient.obtenerUserId(eq("testUser"), anyString())).thenReturn("existing-id");
 
         // Act & Assert
@@ -75,10 +109,19 @@ class UsuarioServiceTest {
     @Test
     void testCrearUsuario_fallaKeycloakAlCrear() {
         // Arrange
-        UsuarioCreateDTO dto = new UsuarioCreateDTO("badUser", "bad@example.com", "password123", "MiEmpresa", true, false);
+        UsuarioCreateDTO dto = UsuarioCreateDTO.builder()
+                .username("badUser")
+                .email("bad@example.com")
+                .razonSocial("MiEmpresa")
+                .password("Password123")
+                .rol("CLIENTE")
+                .enabled(true)
+                .emailVerified(false)
+                .build();
+
         when(keycloakClient.obtenerUserId(eq("badUser"), anyString())).thenReturn(null);
         doThrow(new KeycloakException("crear usuario", 500, "Error"))
-            .when(keycloakClient).crearUsuario(any(UsuarioCreateDTO.class), anyString());
+                .when(keycloakClient).crearUsuario(any(UsuarioCreateDTO.class), anyString());
 
         // Act & Assert
         assertThrows(KeycloakException.class, () -> usuarioService.crearUsuario(dto));
@@ -92,7 +135,8 @@ class UsuarioServiceTest {
         String userId = UUID.randomUUID().toString();
 
         when(keycloakClient.obtenerUserId(eq(username), anyString())).thenReturn(userId);
-        when(usuarioRepository.findById(UUID.fromString(userId))).thenReturn(Optional.of(new Usuario(UUID.fromString(userId))));
+        when(usuarioRepository.findById(UUID.fromString(userId)))
+                .thenReturn(Optional.of(new Usuario(UUID.fromString(userId))));
         doNothing().when(keycloakClient).eliminarUsuario(eq(userId), anyString());
 
         // Act
@@ -102,5 +146,28 @@ class UsuarioServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("Usuario eliminado correctamente", response.getBody());
         verify(usuarioRepository).deleteById(UUID.fromString(userId));
+        verify(keycloakClient).eliminarUsuario(eq(userId), anyString());
+    }
+
+    @Test
+    void testCambiarRolUsuario_ok() {
+        // Arrange
+        String userId = UUID.randomUUID().toString();
+        String nuevoRol = "ADMIN";
+        String token = "fake-token";
+
+        when(keycloakClient.listarRolesDeUsuario(eq(userId), eq(token)))
+                .thenReturn(java.util.List.of(java.util.Map.of("name", "CLIENTE")));
+        when(keycloakClient.obtenerRolPorNombre(eq(nuevoRol), eq(token)))
+                .thenReturn(java.util.Map.of("name", nuevoRol, "id", "admin-role-id"));
+        doNothing().when(keycloakClient).eliminarRolesDeUsuario(anyString(), any(), anyString());
+        doNothing().when(keycloakClient).agregarRolesAUsuario(anyString(), any(), anyString());
+
+        // Act
+        usuarioService.cambiarRolUsuario(userId, nuevoRol, token);
+
+        // Assert
+        verify(keycloakClient).eliminarRolesDeUsuario(eq(userId), any(), eq(token));
+        verify(keycloakClient).agregarRolesAUsuario(eq(userId), any(), eq(token));
     }
 }

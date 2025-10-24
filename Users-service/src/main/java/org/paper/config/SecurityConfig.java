@@ -15,26 +15,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos (NO requieren autenticación)
-                        .requestMatchers(
-                                "/actuator/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/auth/**"  // Importante: incluye verify-email, forgot-password, etc.
-                        ).permitAll()
-
-                        // Endpoints protegidos (requieren JWT)
-                        .requestMatchers("/api/usuarios/**").authenticated()
-
-                        // Cualquier otra ruta
-                        .anyRequest().authenticated()
-                )
-                // Configurar OAuth2 Resource Server con JWT
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwkSetUri("http://keycloak:8080/realms/tesina/protocol/openid-connect/certs"))
+                        .anyRequest().permitAll()  // TODO: Todo público, seguridad en Gateway
                 );
 
         return http.build();

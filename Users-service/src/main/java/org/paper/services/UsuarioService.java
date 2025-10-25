@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -72,9 +73,8 @@ public class UsuarioService {
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
             // 4. Guardar en la base de datos
-            Usuario entity = new Usuario(UUID.fromString(userId));
-            entity.setStatus(UsuarioStatus.ACTIVE);
-            entity.setIntentosActivacion(0);
+            Usuario entity = new Usuario(UUID.fromString(userId), LocalDateTime.now(), UsuarioStatus.PENDING);
+            //faltaria ACTIVO cuando verifique el mail
             usuarioRepository.save(entity);
             log.info("Usuario {} guardado en BD con estado ACTIVE", usuario.getUsername());
 

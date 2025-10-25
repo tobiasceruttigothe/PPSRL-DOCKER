@@ -1,7 +1,6 @@
 package org.paper.repository;
 
 import org.paper.entity.Usuario;
-import org.paper.entity.UsuarioStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

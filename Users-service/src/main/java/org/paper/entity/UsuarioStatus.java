@@ -15,5 +15,4 @@ public enum UsuarioStatus {
     /**
      * Falló después de múltiples intentos, requiere revisión manual
      */
-    FAILED
 }

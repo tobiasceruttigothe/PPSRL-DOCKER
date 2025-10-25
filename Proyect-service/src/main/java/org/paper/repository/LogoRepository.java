@@ -1,7 +1,8 @@
 package org.paper.repository;
 
-import org.paper.entity.Usuario;
-import org.paper.entity.UsuarioStatus;
+
+
+import org.paper.entity.Logo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,6 +10,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
+public interface LogoRepository extends JpaRepository<Logo, Integer> {
+
+    /**
+     * Busca logos por usuario
+     */
+    List<Logo> findByUsuarioId(UUID usuarioId);
 
 }

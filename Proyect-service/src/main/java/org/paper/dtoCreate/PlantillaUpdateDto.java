@@ -6,7 +6,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlantillaCreateDto {
+public class PlantillaUpdateDto {
 
     @NotBlank(message = "El nombre de la plantilla es obligatorio")
     @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
@@ -18,7 +18,7 @@ public class PlantillaCreateDto {
     @NotNull(message = "El ID del tipo de bolsa es obligatorio")
     private Integer tipoBolsaId;
 
-    @NotBlank(message = "La plantilla en base64 es obligatoria")
+    // Base64 opcional: solo si se quiere cambiar la imagen
     private String base64Plantilla;
 
     @NotNull(message = "El ancho es obligatorio")

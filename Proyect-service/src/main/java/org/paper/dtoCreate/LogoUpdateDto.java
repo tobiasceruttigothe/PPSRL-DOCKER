@@ -1,23 +1,17 @@
 package org.paper.dtoCreate;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LogoCreateDto {
-
-    @NotNull(message = "El ID del usuario es obligatorio")
-    private UUID usuarioId;
+public class LogoUpdateDto {
 
     @NotBlank(message = "El nombre del logo es obligatorio")
     @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
     private String nombre;
 
-    @NotBlank(message = "El logo en base64 es obligatorio")
-    private String base64Logo;
+    private String base64Logo; // Opcional: solo si se quiere cambiar la imagen
 }

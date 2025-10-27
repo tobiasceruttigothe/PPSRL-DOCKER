@@ -9,12 +9,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.paper.clients.KeycloakClient;
 import org.paper.dto.UsuarioCreateDTO;
 import org.paper.entity.Usuario;
+import org.paper.entity.UsuarioStatus;
 import org.paper.exception.KeycloakException;
 import org.paper.exception.UsuarioYaExisteException;
 import org.paper.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -134,9 +136,14 @@ class UsuarioServiceTest {
         String username = "testUser";
         String userId = UUID.randomUUID().toString();
 
+        Usuario usuario = new Usuario();
+        usuario.setId(UUID.fromString(userId));
+        usuario.setFechaRegistro(OffsetDateTime.now());
+        usuario.setStatus(UsuarioStatus.ACTIVE); // o el enum que corresponda
+
         when(keycloakClient.obtenerUserId(eq(username), anyString())).thenReturn(userId);
         when(usuarioRepository.findById(UUID.fromString(userId)))
-                .thenReturn(Optional.of(new Usuario(UUID.fromString(userId))));
+                .thenReturn(Optional.of(usuario));
         doNothing().when(keycloakClient).eliminarUsuario(eq(userId), anyString());
 
         // Act
@@ -148,6 +155,7 @@ class UsuarioServiceTest {
         verify(usuarioRepository).deleteById(UUID.fromString(userId));
         verify(keycloakClient).eliminarUsuario(eq(userId), anyString());
     }
+
 
     @Test
     void testCambiarRolUsuario_ok() {

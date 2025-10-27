@@ -38,7 +38,11 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/actuator/**",
                                 "/api/auth/**",
-                                "/api/usuarios/**"
+                                "/api/usuarios/**",
+                                "/api/materiales/**",
+                                "/api/tipos-bolsa/**",
+                                "/api/plantillas/**",
+                                "/api/disenos/**"
                         ).permitAll()
                         .anyExchange().authenticated()
                 )

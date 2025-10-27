@@ -19,8 +19,12 @@ public class Usuario {
     @Column(name = "fecha_registro", nullable = false)
     private OffsetDateTime fechaRegistro;
 
-    @Column(length = 20, nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado",nullable = false, length = 20)
+    private UsuarioStatus status;
+
+   // @Column(length = 20, nullable = false)
+    //private String status;
 
     // Relaciones
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -37,5 +41,4 @@ public class Usuario {
             inverseJoinColumns = @JoinColumn(name = "plantilla_id")
     )
     private Set<Plantilla> plantillasHabilitadas = new HashSet<>();
-
 }

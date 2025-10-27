@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
@@ -20,7 +20,7 @@ public class Usuario {
     private UUID id;
 
     @Column(name = "fecha_registro",nullable = false)
-    private LocalDateTime fechaRegistro;
+    private OffsetDateTime fechaRegistro;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado",nullable = false, length = 20)

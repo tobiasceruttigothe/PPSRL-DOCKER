@@ -1,23 +1,21 @@
 package org.paper.dtoResponse;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO simplificado para listados de diseños (sin base64 para optimizar)
+ */
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Builder
-public class DisenoResponseDto {
+public class DisenoSimpleDto {
     private Integer id;
     private String nombre;
     private String descripcion;
     private String status;
-    private String base64Diseno;
-    private Integer plantillaId;
     private String plantillaNombre;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;

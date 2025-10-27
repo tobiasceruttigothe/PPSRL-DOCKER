@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,7 +74,7 @@ public class UsuarioService {
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
             // 4. Guardar en la base de datos
-            Usuario entity = new Usuario(UUID.fromString(userId), LocalDateTime.now(), UsuarioStatus.PENDING);
+            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.PENDING);
             //faltaria ACTIVO cuando verifique el mail
             usuarioRepository.save(entity);
             log.info("Usuario {} guardado en BD con estado ACTIVE", usuario.getUsername());

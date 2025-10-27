@@ -53,7 +53,6 @@ services:
       start_period: 60s
 
   # Base de datos de la aplicación - NO EXPUESTA
-  # (Comentar el mapeo de puertos en producción)
   app-postgres:
     image: postgres:16-alpine
     container_name: app-postgres
@@ -61,8 +60,6 @@ services:
       POSTGRES_DB: appdb
       POSTGRES_USER: appuser
       POSTGRES_PASSWORD: apppass
-    # ports:
-    #   - "5433:5432"  # ❌ Comentado: Solo para desarrollo/debug
     volumes:
       - app_pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -75,7 +72,6 @@ services:
       retries: 5
 
   # Microservicio de usuarios - NO EXPUESTO
-  # Todo el tráfico debe pasar por el gateway
   users-service:
     build:
       context: ./Users-service
@@ -86,8 +82,6 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-    # ports:
-    #   - "9091:9091"  # ❌ Comentado: Solo accesible desde el gateway
     environment:
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_REALM: tesina
@@ -113,6 +107,29 @@ services:
       retries: 3
       start_period: 60s
 
+  # Microservicio de proyectos - NO EXPUESTO (NUEVO)
+  proyectos-service:
+    build:
+      context: ./Proyect-service
+      dockerfile: Dockerfile
+    container_name: proyectos-service
+    depends_on:
+      app-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://app-postgres:5432/appdb
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: apppass
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9092/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   # API Gateway - EXPUESTO (punto de entrada único)
   api-gateway:
     build:
@@ -122,11 +139,14 @@ services:
     depends_on:
       users-service:
         condition: service_healthy
+      proyectos-service:
+        condition: service_healthy
     ports:
       - "9090:9090"  # ✅ Expuesto: Punto de entrada único a la API
     environment:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/tesina/protocol/openid-connect/certs
       API_GW_URL_MICROSERVICIO_USUARIOS: http://users-service:9091
+      API_GW_URL_MICROSERVICIO_PROYECTOS: http://proyectos-service:9092
       APP_RATE_LIMIT_DEFAULT_CAPACITY: 20
       APP_RATE_LIMIT_DEFAULT_REFILL_TOKENS: 10
       JAVA_OPTS: "-Xms256m -Xmx512m"

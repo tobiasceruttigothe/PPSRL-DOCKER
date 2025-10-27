@@ -20,7 +20,7 @@ public class Usuario {
     private OffsetDateTime fechaRegistro;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado",nullable = false, length = 20)
+    @Column(name = "status",nullable = false, length = 20)
     private UsuarioStatus status;
 
    // @Column(length = 20, nullable = false)

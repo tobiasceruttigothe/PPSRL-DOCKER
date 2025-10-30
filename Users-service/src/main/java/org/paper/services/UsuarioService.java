@@ -74,7 +74,7 @@ public class UsuarioService {
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
             // 4. Guardar en la base de datos
-            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.PENDING);
+            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.ACTIVE);
             //faltaria ACTIVO cuando verifique el mail
             usuarioRepository.save(entity);
             log.info("Usuario {} guardado en BD con estado ACTIVE", usuario.getUsername());

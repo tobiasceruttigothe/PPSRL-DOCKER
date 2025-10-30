@@ -267,8 +267,9 @@ public class PlantillaService {
                     return new EntityNotFoundException("Usuario", usuarioId);
                 });
 
-        plantilla.getUsuariosHabilitados().add(usuario);
-        plantillaRepository.save(plantilla);
+        // ✅ CORRECCIÓN: Modificar el lado propietario (Usuario) en lugar del lado inverso (Plantilla)
+        usuario.getPlantillasHabilitadas().add(plantilla);
+        usuarioRepository.save(usuario);
 
         log.info("Plantilla {} habilitada para usuario {}", plantillaId, usuarioId);
     }
@@ -292,8 +293,9 @@ public class PlantillaService {
                     return new EntityNotFoundException("Usuario", usuarioId);
                 });
 
-        plantilla.getUsuariosHabilitados().remove(usuario);
-        plantillaRepository.save(plantilla);
+        // ✅ CORRECCIÓN: Modificar el lado propietario (Usuario) en lugar del lado inverso (Plantilla)
+        usuario.getPlantillasHabilitadas().remove(plantilla);
+        usuarioRepository.save(usuario);
 
         log.info("Plantilla {} deshabilitada para usuario {}", plantillaId, usuarioId);
     }
@@ -301,6 +303,7 @@ public class PlantillaService {
     /**
      * Obtiene las plantillas habilitadas para un usuario
      */
+    @Transactional(readOnly = true)
     public List<PlantillaSimpleDto> findPlantillasHabilitadasParaUsuario(UUID usuarioId) {
         log.debug("Obteniendo plantillas habilitadas para usuario: {}", usuarioId);
 

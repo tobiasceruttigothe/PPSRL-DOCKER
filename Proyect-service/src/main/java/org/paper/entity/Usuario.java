@@ -6,14 +6,17 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import lombok.*;
 
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"logos", "disenos", "plantillasHabilitadas"})
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
     @Id
     @Column(columnDefinition = "uuid")
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(name = "fecha_registro", nullable = false)

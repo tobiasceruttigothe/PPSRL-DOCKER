@@ -28,8 +28,8 @@ public class Diseno {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Lob
-    @Column(name = "base64_diseno",nullable = false)
+    // Guardar como TEXT para evitar problemas de stream con Clob/Lob
+    @Column(name = "base64_diseno", nullable = false, columnDefinition = "text")
     private String base64Diseno;
 
     @Enumerated(EnumType.STRING)

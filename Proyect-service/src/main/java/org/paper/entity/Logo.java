@@ -6,15 +6,19 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "usuario")
 @Entity
 @Table(name = "logos")
 public class Logo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @ManyToOne(optional = false)
@@ -25,7 +29,7 @@ public class Logo {
     private String nombre;
 
     @Lob
-    @Column(name = "base64_logo",nullable = false)
+    @Column(name = "base64_logo", nullable = false)
     private String base64Logo;
 
     @Column(name = "fecha_creacion", nullable = false)

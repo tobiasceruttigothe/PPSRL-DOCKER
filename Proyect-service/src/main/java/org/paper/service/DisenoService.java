@@ -61,6 +61,7 @@ public class DisenoService {
     /**
      * Obtiene un diseño completo por ID (con base64)
      */
+    @Transactional(readOnly = true)
     public DisenoResponseDto findById(Integer id) {
         log.debug("Obteniendo diseño con ID: {}", id);
 
@@ -262,6 +263,7 @@ public class DisenoService {
     /**
      * Obtiene todos los diseños de un usuario (CON base64 para vista previa)
      */
+    @Transactional(readOnly = true)
     public List<DisenoResponseDto> findByUsuario(UUID usuarioId) {
         log.debug("Obteniendo diseños del usuario: {}", usuarioId);
 
@@ -284,6 +286,7 @@ public class DisenoService {
     /**
      * Obtiene diseños de un usuario por estado (CON base64 para vista previa)
      */
+    @Transactional(readOnly = true)
     public List<DisenoResponseDto> findByUsuarioAndStatus(UUID usuarioId, DisenoStatus status) {
         log.debug("Obteniendo diseños del usuario {} en estado {}", usuarioId, status);
 

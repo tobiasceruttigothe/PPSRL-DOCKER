@@ -1,6 +1,6 @@
 package org.paper.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.paper.dtoCreate.LogoCreateDto;
 import org.paper.dtoCreate.LogoUpdateDto;
@@ -75,6 +75,7 @@ public class LogoService {
     /**
      * Obtiene todos los logos de un usuario
      */
+    @Transactional(readOnly = true)
     public List<LogoResponseDto> obtenerLogosPorUsuario(UUID usuarioId) {
         log.debug("Obteniendo logos para usuario: {}", usuarioId);
 
@@ -96,6 +97,7 @@ public class LogoService {
     /**
      * Obtiene un logo específico por ID
      */
+    @Transactional(readOnly = true)
     public LogoResponseDto obtenerLogoPorId(Integer logoId) {
         log.debug("Obteniendo logo con ID: {}", logoId);
 

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Getter @Setter
-@NoArgsConstructor
+@NoArgsConstructor 
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = "usuariosHabilitados")
@@ -28,7 +28,7 @@ public class Plantilla {
     private TipoBolsa tipoBolsa;
 
     @Lob
-    @Column(name = "base64_plantilla",nullable = false)
+    @Column(name = "base64_plantilla", nullable = false)
     private String base64Plantilla;
 
     @Column(name = "ancho",nullable = false)

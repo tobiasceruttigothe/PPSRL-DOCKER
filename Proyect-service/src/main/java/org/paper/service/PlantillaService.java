@@ -64,6 +64,7 @@ public class PlantillaService {
     /**
      * Obtiene una plantilla completa por ID (con base64)
      */
+    @Transactional(readOnly = true)
     public PlantillaResponseDto findById(Integer id) {
         log.debug("Obteniendo plantilla con ID: {}", id);
 

@@ -7,12 +7,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="IA-service" />
+        <module name="Proyect-service" />
+        <module name="Users-service" />
+        <module name="api-gw" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="IA-service" options="-parameters" />
+      <module name="Proyect-service" options="-parameters" />
+      <module name="Users-service" options="-parameters" />
+      <module name="api-gw" options="-parameters" />
     </option>
   </component>
 </project>

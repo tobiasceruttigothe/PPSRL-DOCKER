@@ -30,7 +30,7 @@ public class GeminiService {
     @Value("${gemini.model}")
     private String model;
 
-    // Prompt preestablecido optimizado para generación de bolsas 3D
+    // Prompt optimizado para generación 3D de bolsas
     private static final String SYSTEM_PROMPT = """
         Eres un diseñador 3D experto especializado en packaging y bolsas de papel.
         Tu tarea es generar una imagen 3D profesional, realista y de alta calidad de una bolsa
@@ -98,12 +98,7 @@ public class GeminiService {
                     request.getDisenoId(),
                     base64Image.length() / 1024);
 
-            return GenerateImageResponseDTO.builder()
-                    .disenoId(request.getDisenoId())
-                    .base64Vista3D(base64Image)
-                    .success(true)
-                    .message("Imagen 3D generada exitosamente")
-                    .build();
+            return GenerateImageResponseDTO.success(request.getDisenoId(), base64Image);
 
         } catch (WebClientResponseException e) {
             log.error("Error HTTP de Gemini API: {} - Body: {}",
@@ -111,32 +106,29 @@ public class GeminiService {
 
             String errorMsg = parseGeminiError(e.getResponseBodyAsString());
 
-            return GenerateImageResponseDTO.builder()
-                    .disenoId(request.getDisenoId())
-                    .success(false)
-                    .message("Error al generar imagen 3D")
-                    .errorDetails(errorMsg)
-                    .build();
+            return GenerateImageResponseDTO.error(
+                    request.getDisenoId(),
+                    "Error al generar imagen 3D",
+                    errorMsg
+            );
 
         } catch (GeminiApiException e) {
             log.error("Error de negocio al generar imagen 3D: {}", e.getMessage(), e);
 
-            return GenerateImageResponseDTO.builder()
-                    .disenoId(request.getDisenoId())
-                    .success(false)
-                    .message("Error al procesar la imagen")
-                    .errorDetails(e.getMessage())
-                    .build();
+            return GenerateImageResponseDTO.error(
+                    request.getDisenoId(),
+                    "Error al procesar la imagen",
+                    e.getMessage()
+            );
 
         } catch (Exception e) {
             log.error("Error inesperado al generar imagen 3D: {}", e.getMessage(), e);
 
-            return GenerateImageResponseDTO.builder()
-                    .disenoId(request.getDisenoId())
-                    .success(false)
-                    .message("Error inesperado al generar imagen 3D")
-                    .errorDetails(e.getMessage())
-                    .build();
+            return GenerateImageResponseDTO.error(
+                    request.getDisenoId(),
+                    "Error inesperado al generar imagen 3D",
+                    e.getMessage()
+            );
         }
     }
 
@@ -174,13 +166,13 @@ public class GeminiService {
 
         // Configuración de generación optimizada para imágenes
         Map<String, Object> generationConfig = new HashMap<>();
-        generationConfig.put("temperature", 0.4);  // Más determinista para resultados consistentes
+        generationConfig.put("temperature", 0.4);
         generationConfig.put("topK", 32);
         generationConfig.put("topP", 1);
-        generationConfig.put("maxOutputTokens", 4096); // Mayor para imágenes de alta calidad
+        generationConfig.put("maxOutputTokens", 4096);
         request.put("generationConfig", generationConfig);
 
-        // Safety settings (opcional, para evitar filtros muy estrictos)
+        // Safety settings
         List<Map<String, Object>> safetySettings = List.of(
                 Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_NONE"),
                 Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_NONE"),
@@ -208,13 +200,12 @@ public class GeminiService {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.ofSeconds(120)) // Timeout de 2 minutos para generación de imágenes
+                .timeout(Duration.ofSeconds(120))
                 .retryWhen(Retry.backoff(3, Duration.ofSeconds(2))
                         .maxBackoff(Duration.ofSeconds(10))
                         .filter(throwable -> {
                             if (throwable instanceof WebClientResponseException) {
                                 int status = ((WebClientResponseException) throwable).getStatusCode().value();
-                                // Reintentar solo en errores 5xx (servidor) o 429 (rate limit)
                                 return status >= 500 || status == 429;
                             }
                             return false;
@@ -242,26 +233,24 @@ public class GeminiService {
                 throw new GeminiApiException("Gemini API error: " + errorMsg);
             }
 
-            // Navegar por la estructura del response de Gemini
+            // Navegar por la estructura del response
             JsonNode candidates = root.path("candidates");
             if (candidates.isEmpty() || candidates.isNull()) {
-                log.error("Respuesta de Gemini sin candidates. Response: {}", responseBody);
+                log.error("Respuesta sin candidates. Response: {}", responseBody);
                 throw new GeminiApiException("Respuesta de Gemini sin candidates");
             }
 
             JsonNode content = candidates.get(0).path("content");
             if (content.isEmpty() || content.isNull()) {
-                log.error("Respuesta de Gemini sin content");
                 throw new GeminiApiException("Respuesta de Gemini sin content");
             }
 
             JsonNode parts = content.path("parts");
             if (parts.isEmpty() || parts.isNull()) {
-                log.error("Respuesta de Gemini sin parts");
                 throw new GeminiApiException("Respuesta de Gemini sin parts");
             }
 
-            // Buscar la parte que contiene la imagen
+            // Buscar la imagen en inline_data
             for (JsonNode part : parts) {
                 if (part.has("inline_data")) {
                     String base64Image = part.path("inline_data").path("data").asText();
@@ -272,10 +261,9 @@ public class GeminiService {
                     }
                 }
 
-                // También buscar en "text" por si Gemini devuelve el base64 ahí
+                // También buscar en "text" por si acaso
                 if (part.has("text")) {
                     String text = part.path("text").asText();
-                    // Validar si el texto parece un base64 válido
                     if (text != null && text.length() > 1000 && isLikelyBase64(text)) {
                         log.info("Imagen encontrada en campo 'text' (tamaño: ~{} KB)",
                                 text.length() / 1024);
@@ -284,7 +272,7 @@ public class GeminiService {
                 }
             }
 
-            log.error("No se encontró imagen en la respuesta de Gemini. Response structure: {}",
+            log.error("No se encontró imagen en la respuesta. Structure: {}",
                     root.toPrettyString());
             throw new GeminiApiException("No se encontró imagen en la respuesta de Gemini");
 
@@ -301,7 +289,6 @@ public class GeminiService {
         if (str == null || str.isEmpty()) {
             return false;
         }
-        // Base64 solo contiene A-Z, a-z, 0-9, +, /, =
         return str.matches("^[A-Za-z0-9+/]+=*$");
     }
 
@@ -325,7 +312,6 @@ public class GeminiService {
      */
     public boolean checkHealth() {
         try {
-            // Hacer una llamada simple a Gemini para verificar conectividad
             String endpoint = String.format("/v1beta/models/%s", model);
 
             String response = geminiWebClient.get()
@@ -338,8 +324,7 @@ public class GeminiService {
                     .timeout(Duration.ofSeconds(5))
                     .block();
 
-            log.debug("Health check exitoso - Gemini API respondiendo. Model info: {}",
-                    response != null ? response.substring(0, Math.min(100, response.length())) : "null");
+            log.debug("Health check exitoso - Gemini API respondiendo");
             return true;
 
         } catch (Exception e) {
@@ -347,4 +332,28 @@ public class GeminiService {
             return false;
         }
     }
+
+    /**
+     * Genera vista 3D a partir de un diseño base64
+     * Este método orquesta la llamada a generate3DImage
+     */
+    public GenerateImageResponseDTO generate3DView(Integer disenoId, String base64Diseno, String promptAdicional) {
+        log.info("Generando vista 3D para diseño ID: {}", disenoId);
+
+        // Crear el request DTO
+        GenerateImageRequestDTO request = GenerateImageRequestDTO.builder()
+                .disenoId(disenoId)
+                .base64Diseno(base64Diseno)
+                .promptAdicional(promptAdicional)
+                .build();
+
+        // Llamar al método de generación de imagen
+        GenerateImageResponseDTO response = generate3DImage(request);
+
+        log.info("Vista 3D generada para diseño ID: {}, success: {}", disenoId, response.isSuccess());
+
+        return response;
+    }
+
+
 }

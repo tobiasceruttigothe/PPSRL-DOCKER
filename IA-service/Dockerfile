@@ -23,10 +23,10 @@ COPY --from=build /app/target/IA-service-1.0-SNAPSHOT.jar app.jar
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:9093/actuator/health || exit 1
 
 # Puerto
-EXPOSE 8081
+EXPOSE 9093
 
 # Comando de inicio
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]

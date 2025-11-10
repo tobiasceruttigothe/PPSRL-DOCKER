@@ -565,51 +565,5 @@ public class DisenoController {
                 )
         );
     }
-    //ANALIZAR BIEN
-
-    @PostMapping("/{id}/generate-3d")
-    @Operation(
-            summary = "Generar vista 3D de un diseño",
-            description = """
-        Genera automáticamente una vista 3D del diseño usando IA.
-        
-        **Proceso:**
-        1. Obtiene el diseño vectorizado del diseño especificado
-        2. Envía el diseño al servicio de IA (Google Gemini)
-        3. La IA genera una imagen 3D profesional y realista
-        4. Guarda la imagen en el campo base64_vista3D del diseño
-        
-        ⚠️ **Nota:** Este proceso puede tardar 15-30 segundos.
-        """
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Vista 3D generada y guardada exitosamente"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Diseño no encontrado",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "503",
-                    description = "Servicio de IA no disponible",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            )
-    })
-    public ResponseEntity<SuccessResponse<DisenoResponseDto>> generate3DView(
-            @Parameter(description = "ID del diseño", required = true)
-            @PathVariable Integer id) {
-
-        log.info("Request: Generar vista 3D para diseño {}", id);
-
-        DisenoResponseDto diseno = disenoService.generate3DView(id);
-
-        return ResponseEntity.ok(
-                SuccessResponse.of("Vista 3D generada exitosamente", diseno)
-        );
-    }
-
 
 }

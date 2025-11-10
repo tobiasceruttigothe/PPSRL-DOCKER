@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/api/materiales/**",
                                 "/api/tipos-bolsa/**",
                                 "/api/plantillas/**",
-                                "/api/disenos/**"
+                                "/api/disenos/**",
+                                "/api/ia/*"
                         ).permitAll()
                         .anyExchange().authenticated()
                 )

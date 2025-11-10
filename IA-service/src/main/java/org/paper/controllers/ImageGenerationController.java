@@ -8,9 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.paper.dto.GenerateImageRequestDTO;
-import org.paper.dto.GenerateImageResponseDTO;
-import org.paper.dto.ErrorResponse;
+import org.paper.dto.*;
 import org.paper.services.GeminiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -89,4 +87,5 @@ public class ImageGenerationController {
             return ResponseEntity.status(503).body("Servicio de IA inoperativo - Error de conexión con Gemini API");
         }
     }
+
 }

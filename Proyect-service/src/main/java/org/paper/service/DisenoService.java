@@ -16,6 +16,7 @@ import org.paper.repository.DisenoRepository;
 import org.paper.repository.PlantillaRepository;
 import org.paper.repository.UsuarioRepository;
 import org.paper.util.Base64ValidatorUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class DisenoService {
     private final UsuarioRepository usuarioRepository;
     private final PlantillaRepository plantillaRepository;
     private final Base64ValidatorUtil base64Validator;
+
 
     public DisenoService(DisenoRepository disenoRepository,
                          UsuarioRepository usuarioRepository,

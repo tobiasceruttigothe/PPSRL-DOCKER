@@ -1,31 +1,40 @@
 package org.paper.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+//@antml:parameter>
+@AllArgsConstructor
 public class GenerateImageResponseDTO {
-    private String imageBase64;
-    private String status;
 
-    public GenerateImageResponseDTO() {
+    private Integer disenoId;
+    private String base64Vista3D;
+    private boolean success;
+    private String message;
+    private String errorDetails;
+
+    // Constructor de conveniencia para respuestas exitosas
+    public static GenerateImageResponseDTO success(Integer disenoId, String base64Vista3D) {
+        return GenerateImageResponseDTO.builder()
+                .disenoId(disenoId)
+                .base64Vista3D(base64Vista3D)
+                .success(true)
+                .message("Imagen 3D generada exitosamente")
+                .build();
     }
 
-    public GenerateImageResponseDTO(String imageBase64, String status) {
-        this.imageBase64 = imageBase64;
-        this.status = status;
-    }
-
-    public String getImageBase64() {
-        return imageBase64;
-    }
-
-    public void setImageBase64(String imageBase64) {
-        this.imageBase64 = imageBase64;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    // Constructor de conveniencia para errores
+    public static GenerateImageResponseDTO error(Integer disenoId, String message, String errorDetails) {
+        return GenerateImageResponseDTO.builder()
+                .disenoId(disenoId)
+                .success(false)
+                .message(message)
+                .errorDetails(errorDetails)
+                .build();
     }
 }
-

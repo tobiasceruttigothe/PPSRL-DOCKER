@@ -373,6 +373,7 @@ public class DisenoService {
                 .descripcion(diseno.getDescripcion())
                 .status(diseno.getStatus().name())
                 .base64Diseno(diseno.getBase64Diseno())
+                .base64Vista3D(diseno.getBase64Vista3D())
                 .plantillaId(diseno.getPlantilla().getId())
                 .plantillaNombre(diseno.getPlantilla().getNombre())
                 .fechaCreacion(diseno.getFechaCreacion())

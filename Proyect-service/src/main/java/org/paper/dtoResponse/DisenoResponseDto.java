@@ -17,6 +17,7 @@ public class DisenoResponseDto {
     private String descripcion;
     private String status;
     private String base64Diseno;
+    private String base64Vista3D;
     private Integer plantillaId;
     private String plantillaNombre;
     private LocalDateTime fechaCreacion;

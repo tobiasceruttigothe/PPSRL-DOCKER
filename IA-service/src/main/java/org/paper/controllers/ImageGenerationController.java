@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.paper.dto.*;
-import org.paper.services.GeminiService;
+import org.paper.services.StabilityAIService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "IA - Generación de Imágenes", description = "Generación de vistas 3D usando Google Gemini")
 public class ImageGenerationController {
 
-    private final GeminiService geminiService;
+    private final StabilityAIService stabilityAIService;
 
-    public ImageGenerationController(GeminiService geminiService) {
-        this.geminiService = geminiService;
+    public ImageGenerationController( StabilityAIService stabilityAIService) {
+        this.stabilityAIService = stabilityAIService;
     }
 
-    @PostMapping("/generate-3d-view")
+    @PostMapping("/generate-3d")
     @Operation(
             summary = "Generar vista 3D de un diseño",
             description = """
@@ -61,25 +61,25 @@ public class ImageGenerationController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
-    public ResponseEntity<GenerateImageResponseDTO> generate3DView(
+    public ResponseEntity<GenerateImageResponseDTO> generate3DViewstability(
             @Valid @RequestBody GenerateImageRequestDTO request) {
 
         log.info("Solicitud de generación 3D recibida para diseño ID: {}", request.getDisenoId());
 
-        GenerateImageResponseDTO response = geminiService.generate3DImage(request);
+        GenerateImageResponseDTO response = stabilityAIService.generate3DImage(request);
 
         log.info("Imagen 3D generada exitosamente para diseño ID: {}", request.getDisenoId());
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/health")
+    @GetMapping("/healthh")
     @Operation(
             summary = "Verificar estado del servicio",
             description = "Verifica si el servicio de IA está operativo y puede conectarse a Gemini API"
     )
-    public ResponseEntity<String> healthCheck() {
-        boolean isHealthy = geminiService.checkHealth();
+    public ResponseEntity<String> healthCheckk() {
+        boolean isHealthy = stabilityAIService.checkHealth();
 
         if (isHealthy) {
             return ResponseEntity.ok("Servicio de IA operativo - Conectado a Gemini API");

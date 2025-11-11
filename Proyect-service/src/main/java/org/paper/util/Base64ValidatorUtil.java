@@ -79,9 +79,29 @@ public class Base64ValidatorUtil {
     /**
      * Valida base64 con tamaño máximo de 10MB (para plantillas y diseños)
      */
+    /*
     public void validateBase64ForPlantillaOrDiseno(String base64, String fileName) {
         validateBase64(base64, fileName, "base64", MAX_SIZE_10MB);
     }
+
+     */
+
+    public void validateBase64ForPlantillaOrDiseno(String base64, String fileName) {
+        if (base64 == null || base64.trim().isEmpty()) {
+            throw new ValidationException("base64", "El campo no puede estar vacío");
+        }
+
+        // Si parece JSON, salteamos la validación base64
+        String trimmed = base64.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            log.debug("Campo '{}' detectado como JSON, se omite validación base64.", fileName);
+            return;
+        }
+
+        // Si parece base64 (por prefijo o formato), validamos normalmente
+        validateBase64(base64, fileName, "base64", MAX_SIZE_10MB);
+    }
+
 
     /**
      * Calcula el tamaño en bytes del base64

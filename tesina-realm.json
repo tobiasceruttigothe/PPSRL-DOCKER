@@ -1,6 +1,9 @@
 {
   "realm": "tesina",
   "enabled": true,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 3600,
   "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,

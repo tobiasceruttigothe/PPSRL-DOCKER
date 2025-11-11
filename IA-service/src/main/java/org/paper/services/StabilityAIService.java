@@ -13,6 +13,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.util.retry.Retry;
@@ -65,18 +68,18 @@ public class StabilityAIService {
         log.info("Generando vista 3D para diseño ID: {}", request.getDisenoId());
 
         try {
-            // 1. Buscar el diseño por ID
+            // 1. Buscar el diseño
             Diseno diseno = disenoRepository.findById(request.getDisenoId())
                     .orElseThrow(() -> new GeminiApiException("Diseño no encontrado con ID: " + request.getDisenoId()));
 
-            // 2. Validar que tenga una imagen base64
-            if (diseno.getBase64Diseno() == null || diseno.getBase64Diseno().trim().isEmpty()) {
-                throw new GeminiApiException("El diseño no contiene una imagen en base64");
+            // 2. Validar imagen base64
+            if (request.getImagenBase64() == null || request.getImagenBase64().trim().isEmpty()) {
+                throw new GeminiApiException("Debe enviarse una imagen base64 para generar la vista 3D");
             }
 
             // 3. Generar imagen 3D usando Stability AI
             String base64Image3D = generateImageWithStabilityAI(
-                    diseno.getBase64Diseno(),
+                    request.getImagenBase64(),
                     request.getPromptAdicional()
             );
 
@@ -108,66 +111,49 @@ public class StabilityAIService {
     }
 
 
+
     /**
      * Genera imagen usando Stability AI Image-to-Image
      */
     private String generateImageWithStabilityAI(String base64Input, String promptAdicional) {
         log.debug("Llamando a Stability AI para generar imagen 3D");
 
-        // Limpiar prefijo data:image si existe
+        // Decodificar Base64 a bytes
         String cleanBase64 = base64Input.replaceFirst("^data:image/[^;]+;base64,", "");
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(cleanBase64);
 
-        // Combinar prompt base con adicional
+        // Prompt combinado
         String fullPrompt = BASE_PROMPT;
         if (promptAdicional != null && !promptAdicional.trim().isEmpty()) {
             fullPrompt += " " + promptAdicional;
         }
 
-        // Construir request para Stability AI (image-to-image)
-        Map<String, Object> request = new HashMap<>();
-        request.put("init_image", cleanBase64);
-        request.put("init_image_mode", "IMAGE_STRENGTH");
-        request.put("image_strength", 0.35); // Mantener el diseño original
-
-        List<Map<String, Object>> textPrompts = List.of(
-                Map.of(
-                        "text", fullPrompt,
-                        "weight", 1
-                ),
-                Map.of(
-                        "text", "blurry, bad quality, distorted, flat, 2D, unrealistic",
-                        "weight", -1 // Negative prompt
-                )
-        );
-        request.put("text_prompts", textPrompts);
-
-        request.put("cfg_scale", 7);
-        request.put("samples", 1);
-        request.put("steps", 30);
+        // Construir cuerpo multipart
+        MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
+        formData.add("init_image", new org.springframework.core.io.ByteArrayResource(imageBytes) {
+            @Override
+            public String getFilename() {
+                return "input.png";
+            }
+        });
+        formData.add("image_strength", "0.35");
+        formData.add("cfg_scale", "7");
+        formData.add("samples", "1");
+        formData.add("steps", "30");
+        formData.add("text_prompts[0][text]", fullPrompt);
+        formData.add("text_prompts[0][weight]", "1");
+        formData.add("text_prompts[1][text]", "blurry, bad quality, distorted, flat, 2D, unrealistic");
+        formData.add("text_prompts[1][weight]", "-1");
 
         try {
             String responseBody = webClient.post()
                     .uri("/v1/generation/" + model + "/image-to-image")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(request)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(formData))
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(120))
-                    .retryWhen(Retry.backoff(3, Duration.ofSeconds(2))
-                            .maxBackoff(Duration.ofSeconds(10))
-                            .filter(throwable -> {
-                                if (throwable instanceof WebClientResponseException) {
-                                    int status = ((WebClientResponseException) throwable).getStatusCode().value();
-                                    return status >= 500 || status == 429;
-                                }
-                                return false;
-                            })
-                            .doBeforeRetry(signal ->
-                                    log.warn("Reintentando llamada a Stability AI (intento {}/3) - Error: {}",
-                                            signal.totalRetries() + 1,
-                                            signal.failure().getMessage())))
                     .block();
 
             return extractGeneratedImage(responseBody);
@@ -177,6 +163,7 @@ public class StabilityAIService {
             throw new GeminiApiException("Error al comunicarse con Stability AI", e);
         }
     }
+
 
     /**
      * Extrae la imagen base64 del response de Stability AI
@@ -246,6 +233,30 @@ public class StabilityAIService {
         } catch (Exception e) {
             log.error("Health check fallido: {}", e.getMessage());
             return false;
+        }
+    }
+
+    private String extractBase64FromDesign(String disenoJson) {
+        try {
+            JsonNode root = objectMapper.readTree(disenoJson);
+            JsonNode objects = root.path("objects");
+
+            if (objects.isArray()) {
+                for (JsonNode obj : objects) {
+                    if ("Image".equalsIgnoreCase(obj.path("type").asText())) {
+                        String src = obj.path("src").asText();
+                        if (src != null && src.startsWith("data:image/")) {
+                            return src;
+                        }
+                    }
+                }
+            }
+
+            log.warn("No se encontró ninguna imagen con campo 'src' en el JSON del diseño");
+            return null;
+        } catch (Exception e) {
+            log.error("Error al parsear JSON del diseño: {}", e.getMessage(), e);
+            return null;
         }
     }
 }

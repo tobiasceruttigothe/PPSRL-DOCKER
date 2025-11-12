@@ -69,7 +69,7 @@ class UsuarioServiceTest {
 
         doNothing().when(keycloakClient).crearUsuario(any(UsuarioCreateDTO.class), anyString());
         doNothing().when(keycloakClient).asignarPasswordTemporal(eq(newUserId), eq(dto.getPassword()), anyString());
-        doNothing().when(emailVerificationService).createAndSendVerification(anyString(), anyString(), anyString());
+        //doNothing().when(emailVerificationService).createAndSendVerification(anyString(), anyString(), anyString());
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
 
         // Mock para cambio de rol

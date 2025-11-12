@@ -247,4 +247,104 @@ public class KeycloakClient {
                 .toBodilessEntity()
                 .block();
     }
+
+    // ==================== GESTIÓN DE REQUIRED ACTIONS ====================
+
+    /**
+     * Elimina una required action de un usuario.
+     * Ejemplos de required actions: "UPDATE_PASSWORD", "VERIFY_EMAIL", "UPDATE_PROFILE"
+     */
+    public void eliminarRequiredAction(String userId, String action, String token) {
+        try {
+            // 1. Obtener el usuario actual
+            Map<String, Object> user = obtenerUsuarioPorId(userId, token);
+
+            // 2. Obtener las required actions actuales
+            @SuppressWarnings("unchecked")
+            List<String> requiredActions = (List<String>) user.get("requiredActions");
+
+            // 3. Si no tiene required actions, no hacer nada
+            if (requiredActions == null || requiredActions.isEmpty()) {
+                log.debug("Usuario {} no tiene required actions", userId);
+                return;
+            }
+
+            // 4. Eliminar la action especificada
+            boolean removed = requiredActions.remove(action);
+
+            if (!removed) {
+                log.debug("Usuario {} no tenía la required action {}", userId, action);
+                return;
+            }
+
+            // 5. Actualizar el usuario con las nuevas required actions
+            webClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("requiredActions", requiredActions))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+
+            log.info("Required action '{}' eliminada del usuario {}", action, userId);
+
+        } catch (WebClientResponseException e) {
+            throw new KeycloakException("eliminar required action", e.getStatusCode().value(),
+                    "No se pudo eliminar la required action: " + e.getResponseBodyAsString());
+        }
+    }
+
+    /**
+     * Agrega una required action a un usuario
+     */
+    public void agregarRequiredAction(String userId, String action, String token) {
+        try {
+            Map<String, Object> user = obtenerUsuarioPorId(userId, token);
+
+            @SuppressWarnings("unchecked")
+            List<String> requiredActions = (List<String>) user.get("requiredActions");
+
+            if (requiredActions == null) {
+                requiredActions = new java.util.ArrayList<>();
+            }
+
+            if (!requiredActions.contains(action)) {
+                requiredActions.add(action);
+            }
+
+            webClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("requiredActions", requiredActions))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+
+            log.info("Required action '{}' agregada al usuario {}", action, userId);
+
+        } catch (WebClientResponseException e) {
+            throw new KeycloakException("agregar required action", e.getStatusCode().value(),
+                    "No se pudo agregar la required action: " + e.getResponseBodyAsString());
+        }
+    }
+
+    /**
+     * Verifica si un usuario tiene una required action específica
+     */
+    public boolean tieneRequiredAction(String userId, String action, String token) {
+        try {
+            Map<String, Object> user = obtenerUsuarioPorId(userId, token);
+
+            @SuppressWarnings("unchecked")
+            List<String> requiredActions = (List<String>) user.get("requiredActions");
+
+            return requiredActions != null && requiredActions.contains(action);
+
+        } catch (Exception e) {
+            log.error("Error verificando required actions: {}", e.getMessage());
+            return false;
+        }
+    }
 }

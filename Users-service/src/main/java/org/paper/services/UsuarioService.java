@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,6 +44,7 @@ public class UsuarioService {
 
     /**
      * Crea un nuevo usuario en el sistema
+     * ACTUALIZADO: Ya no se asigna password temporal, el usuario la establecerá al activar su cuenta
      */
     @Transactional
     public ResponseEntity<String> crearUsuario(UsuarioCreateDTO usuario) {
@@ -57,7 +57,7 @@ public class UsuarioService {
             throw new UsuarioYaExisteException(usuario.getUsername());
         }
 
-        // 1. Crear usuario en Keycloak
+        // 1. Crear usuario en Keycloak (sin contraseña aún)
         keycloakClient.crearUsuario(usuario, token);
 
         String userId = keycloakClient.obtenerUserId(usuario.getUsername(), token);
@@ -67,31 +67,31 @@ public class UsuarioService {
         log.info("Usuario creado en Keycloak con ID: {}", userId);
 
         try {
-            // 2. Asignar contraseña temporal
-            keycloakClient.asignarPasswordTemporal(userId, usuario.getPassword(), token);
+            // 2. ⚠️ CAMBIO IMPORTANTE: Ya NO se asigna password temporal
+            // La contraseña la establecerá el usuario al activar su cuenta
 
             // 3. Asignar el rol especificado
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
-            // 4. Guardar en la base de datos
-            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.ACTIVE);
-            //faltaria ACTIVO cuando verifique el mail
+            // 4. Guardar en la base de datos con estado PENDING (pendiente de activación)
+            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.PENDING);
             usuarioRepository.save(entity);
-            log.info("Usuario {} guardado en BD con estado ACTIVE", usuario.getUsername());
+            log.info("Usuario {} guardado en BD con estado PENDING", usuario.getUsername());
 
-            // 5. Enviar email de verificación
+            // 5. Enviar email de ACTIVACIÓN (no solo verificación)
             try {
-                emailVerificationService.createAndSendVerification(userId, usuario.getUsername(), usuario.getEmail());
-                log.info("Email de verificación enviado a {}", usuario.getEmail());
+                emailVerificationService.createAndSendActivation(userId, usuario.getUsername(), usuario.getEmail());
+                log.info("✅ Email de activación enviado a {}", usuario.getEmail());
             } catch (Exception emailEx) {
-                log.warn("No se pudo enviar email de verificación a {}: {}. Usuario creado de todas formas.",
+                log.warn("⚠️ No se pudo enviar email de activación a {}: {}. Usuario creado de todas formas.",
                         usuario.getEmail(), emailEx.getMessage());
             }
 
-            return ResponseEntity.ok("Usuario creado correctamente. Se ha enviado un email de verificación con la contraseña temporal.");
+            return ResponseEntity.ok("✅ Usuario creado correctamente. Se ha enviado un email de activación a " +
+                    usuario.getEmail() + ". El usuario debe activar su cuenta y establecer su contraseña desde el link del email.");
 
         } catch (Exception e) {
-            log.error("Error al configurar usuario {}: {}", userId, e.getMessage(), e);
+            log.error("❌ Error al configurar usuario {}: {}", userId, e.getMessage(), e);
             // Rollback: eliminar usuario de Keycloak
             try {
                 keycloakClient.eliminarUsuario(userId, token);

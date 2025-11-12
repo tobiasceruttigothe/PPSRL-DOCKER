@@ -25,6 +25,9 @@ public class DisenoCreateDto {
     @Size(max = 500, message = "La descripción no puede superar los 500 caracteres")
     private String descripcion;
 
-    @NotBlank(message = "El diseño en base64 es obligatorio")
+    @NotBlank(message = "El diseño es obligatorio")
     private String base64Diseno;
+
+    @NotBlank(message = "La vista previa dell diseño es obligatorio")
+    private String base64Preview;
 }

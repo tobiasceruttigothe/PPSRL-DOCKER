@@ -100,6 +100,7 @@ public class DisenoService {
 
         // 3. Validar el base64 usando la utilidad
         base64Validator.validateBase64ForPlantillaOrDiseno(dto.getBase64Diseno(), dto.getNombre());
+        base64Validator.validateBase64ForPlantillaOrDiseno(dto.getBase64Preview(), dto.getNombre());
 
         // 4. Crear entidad
         Diseno diseno = new Diseno();
@@ -108,6 +109,7 @@ public class DisenoService {
         diseno.setNombre(dto.getNombre());
         diseno.setDescripcion(dto.getDescripcion());
         diseno.setBase64Diseno(dto.getBase64Diseno());
+        diseno.setBase64Preview(dto.getBase64Preview());
         diseno.setStatus(DisenoStatus.PROGRESO); // Estado inicial
         diseno.setFechaCreacion(LocalDateTime.now());
 
@@ -373,7 +375,7 @@ public class DisenoService {
                 .descripcion(diseno.getDescripcion())
                 .status(diseno.getStatus().name())
                 .base64Diseno(diseno.getBase64Diseno())
-                .base64Vista3D(diseno.getBase64Vista3D())
+                .base64Preview(diseno.getBase64Preview())
                 .plantillaId(diseno.getPlantilla().getId())
                 .plantillaNombre(diseno.getPlantilla().getNombre())
                 .fechaCreacion(diseno.getFechaCreacion())

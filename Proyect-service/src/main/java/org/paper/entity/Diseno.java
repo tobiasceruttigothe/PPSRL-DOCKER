@@ -33,8 +33,8 @@ public class Diseno {
     private String base64Diseno;
 
     @Lob
-    @Column(name = "base64_vista3D", columnDefinition = "text")
-    private String base64Vista3D;
+    @Column(name = "base64_preview", nullable = false, columnDefinition = "text")
+    private String base64Preview;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado",nullable = false, length = 20)

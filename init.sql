@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS disenos (
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
     base64_diseno TEXT NOT NULL,
-    base64_vista3D TEXT,
+    base64_preview TEXT NOT NULL,
     estado VARCHAR(20) NOT NULL DEFAULT 'PROGRESO',
     fecha_creacion TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     fecha_actualizacion TIMESTAMP WITH TIME ZONE,

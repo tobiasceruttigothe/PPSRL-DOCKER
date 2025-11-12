@@ -18,4 +18,6 @@ public class DisenoUpdateDto {
 
     // Base64 opcional: solo si se quiere cambiar la imagen
     private String base64Diseno;
+
+    private String base64Preview;
 }

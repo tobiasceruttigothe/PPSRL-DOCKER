@@ -100,36 +100,4 @@ public class PasswordRecoveryService {
             throw new RuntimeException("No se pudo resetear la contraseña. El token puede estar expirado.");
         }
     }
-
-    /**
-     * Cambia la contraseña temporal por una definitiva (requiere autenticación)
-     * El usuario ya está autenticado, obtenemos su userId del contexto de seguridad
-     */
-    public void cambiarPasswordTemporal(String userId, String currentPassword, String newPassword) {
-        log.info("Cambio de contraseña temporal para userId: {}", userId);
-
-        String adminToken = keycloakAdminService.getAdminToken();
-
-        try {
-            // Verificar que el usuario exista
-            Map<String, Object> user = keycloakClient.obtenerUsuarioPorId(userId, adminToken);
-            if (user == null) {
-                throw new UsuarioNotFoundException(userId);
-            }
-
-            // Cambiar password en Keycloak (NO temporal)
-            keycloakClient.cambiarPassword(userId, newPassword, false, adminToken);
-
-            // Enviar email de confirmación
-            String email = (String) user.get("email");
-            String username = (String) user.get("username");
-            emailService.enviarEmailPasswordCambiada(email, username);
-
-            log.info("Contraseña temporal cambiada exitosamente para userId: {}", userId);
-
-        } catch (Exception e) {
-            log.error("Error al cambiar contraseña temporal: {}", e.getMessage(), e);
-            throw new RuntimeException("No se pudo cambiar la contraseña temporal", e);
-        }
-    }
 }

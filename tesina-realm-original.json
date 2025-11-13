@@ -43,18 +43,9 @@
   ],
   "roles": {
     "realm": [
-      {
-        "name": "ADMIN",
-        "description": "Administrador del sistema"
-      },
-      {
-        "name": "CLIENTE",
-        "description": "Cliente que puede gestionar proyectos"
-      },
-      {
-        "name": "DISEÑADOR",
-        "description": "Diseñador con permisos específicos"
-      }
+      { "name": "ADMIN", "description": "Administrador del sistema" },
+      { "name": "CLIENTE", "description": "Cliente que puede gestionar proyectos" },
+      { "name": "DISEÑADOR", "description": "Diseñador con permisos específicos" }
     ],
     "client": {
       "realm-management": [],
@@ -73,23 +64,7 @@
       "publicClient": false,
       "protocol": "openid-connect",
       "redirectUris": ["*"],
-      "webOrigins": ["*"],
-      "protocolMappers": [
-        {
-          "name": "razonSocial",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "userinfo.token.claim": "true",
-            "user.attribute": "razonSocial",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "razonSocial",
-            "jsonType.label": "String"
-          }
-        }
-      ]
+      "webOrigins": ["*"]
     }
   ],
   "users": [
@@ -123,4 +98,3 @@
     ]
   }
 }
-

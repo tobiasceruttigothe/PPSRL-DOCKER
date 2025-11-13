@@ -1,12 +1,10 @@
 package org.paper.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +12,6 @@ import org.paper.dto.*;
 import org.paper.services.EmailVerificationService;
 import org.paper.services.PasswordRecoveryService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,9 +29,11 @@ public class AuthController {
         this.passwordRecoveryService = passwordRecoveryService;
     }
 
+    // ==================== ACTIVACIÓN DE CUENTA ====================
+
     @PostMapping("/activate-account")
     @Operation(
-            summary = "Activar cuenta de usuario (NUEVO MÉTODO RECOMENDADO)",
+            summary = "Activar cuenta de usuario",
             description = """
             **✨ Activa la cuenta del usuario en un solo paso.**
             
@@ -57,7 +55,7 @@ public class AuthController {
             
             **Token válido por:** 24 horas
             
-            **Ventajas vs. flujo anterior:**
+            **Ventajas:**
             - ✅ Más seguro: No se envían contraseñas por email
             - ✅ Mejor UX: Todo en un solo paso
             - ✅ Menos confusión: No hay passwords temporales
@@ -102,7 +100,7 @@ public class AuthController {
 
     @PostMapping("/resend-activation")
     @Operation(
-            summary = "Reenviar email de activación (cuando el token expiró)",
+            summary = "Reenviar email de activación",
             description = """
             **🔄 Solicita un nuevo email de activación si el token expiró (24 horas).**
             
@@ -153,31 +151,6 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/verify-email")
-    @Deprecated
-    @Operation(
-            summary = "⚠️ DEPRECATED - Usar /activate-account en su lugar",
-            description = """
-            **DEPRECATED:** Este endpoint está obsoleto.
-            
-            Usar `/api/auth/activate-account` que combina verificación de email + 
-            establecimiento de contraseña en un solo paso.
-            
-            Este método solo verifica el email pero deja al usuario sin poder hacer login
-            porque sigue teniendo la required action UPDATE_PASSWORD en Keycloak.
-            """
-    )
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
-        try {
-            log.warn("⚠️ Endpoint /verify-email está deprecado. Usar /activate-account");
-            verificationService.verifyTokenAndMarkEmail(token);
-            return ResponseEntity.ok("Email verificado, pero debés usar /activate-account para activar completamente tu cuenta");
-        } catch (Exception e) {
-            log.error("Error verificando token: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Token inválido o expirado");
-        }
-    }
-
     // ==================== RECUPERACIÓN DE CONTRASEÑA ====================
 
     @PostMapping("/forgot-password")
@@ -191,6 +164,10 @@ public class AuthController {
             2. Frontend envía el email a este endpoint
             3. Backend genera token JWT y envía email con link
             4. Usuario recibe email con link: `http://frontend.com/reset-password?token=XXX`
+            
+            **Diferencia con /resend-activation:**
+            - 🔄 `/resend-activation`: Para cuentas NO activadas (sin password aún)
+            - 🔐 `/forgot-password`: Para cuentas YA activadas (olvido de password)
             
             ⚠️ **Nota:** Por seguridad, siempre retorna 200 OK aunque el email no exista.
             
@@ -252,62 +229,6 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Error al resetear contraseña: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Token inválido o expirado");
-        }
-    }
-
-    @PostMapping("/change-temporary-password")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @Operation(
-            summary = "Cambiar contraseña temporal (requiere autenticación)",
-            description = """
-            Permite al usuario cambiar su contraseña temporal por una definitiva.
-            
-            **Flujo:**
-            1. Usuario inicia sesión con contraseña temporal
-            2. Keycloak lo obliga a cambiarla (o frontend detecta que es temporal)
-            3. Usuario ingresa contraseña actual (temporal) y nueva contraseña
-            4. Frontend envía ambas contraseñas a este endpoint (con token JWT de sesión)
-            5. Backend cambia la contraseña a definitiva
-            
-            ⚠️ **Requiere:** Token JWT de autenticación válido
-            """
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Contraseña cambiada correctamente",
-                    content = @Content(mediaType = "text/plain")
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Contraseña actual incorrecta o nueva contraseña inválida",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "No autenticado (token inválido o expirado)"
-            )
-    })
-    public ResponseEntity<String> changeTemporaryPassword(
-            @Valid @RequestBody ChangePasswordDTO request,
-            Authentication authentication) {
-        try {
-            // Obtener userId del JWT de Keycloak
-            Jwt jwt = (Jwt) authentication.getPrincipal();
-            String userId = jwt.getSubject();
-
-            log.info("Cambio de contraseña temporal solicitado para userId: {}", userId);
-
-            passwordRecoveryService.cambiarPasswordTemporal(
-                    userId,
-                    request.getCurrentPassword(),
-                    request.getNewPassword()
-            );
-
-            return ResponseEntity.ok("Contraseña cambiada correctamente");
-        } catch (Exception e) {
-            log.error("Error al cambiar contraseña temporal: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("No se pudo cambiar la contraseña. Verificá que la contraseña actual sea correcta.");
         }
     }
 }

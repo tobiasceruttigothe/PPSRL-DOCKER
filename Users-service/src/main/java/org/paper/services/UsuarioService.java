@@ -67,18 +67,16 @@ public class UsuarioService {
         log.info("Usuario creado en Keycloak con ID: {}", userId);
 
         try {
-            // 2. ⚠️ CAMBIO IMPORTANTE: Ya NO se asigna password temporal
-            // La contraseña la establecerá el usuario al activar su cuenta
 
-            // 3. Asignar el rol especificado
+            // 2. Asignar el rol especificado
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
-            // 4. Guardar en la base de datos con estado PENDING (pendiente de activación)
+            // 3. Guardar en la base de datos con estado PENDING (pendiente de activación)
             Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.PENDING);
             usuarioRepository.save(entity);
             log.info("Usuario {} guardado en BD con estado PENDING", usuario.getUsername());
 
-            // 5. Enviar email de ACTIVACIÓN (no solo verificación)
+            // 4. Enviar email de ACTIVACIÓN (no solo verificación)
             try {
                 emailVerificationService.createAndSendActivation(userId, usuario.getUsername(), usuario.getEmail());
                 log.info("✅ Email de activación enviado a {}", usuario.getEmail());

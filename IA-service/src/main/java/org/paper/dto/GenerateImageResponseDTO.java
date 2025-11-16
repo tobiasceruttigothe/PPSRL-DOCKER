@@ -8,21 +8,18 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 @NoArgsConstructor
-//@antml:parameter>
 @AllArgsConstructor
 public class GenerateImageResponseDTO {
 
     private Integer disenoId;
-    private String base64Vista3D;
     private boolean success;
     private String message;
     private String errorDetails;
 
     // Constructor de conveniencia para respuestas exitosas
-    public static GenerateImageResponseDTO success(Integer disenoId, String base64Vista3D) {
+    public static GenerateImageResponseDTO success(Integer disenoId) {
         return GenerateImageResponseDTO.builder()
                 .disenoId(disenoId)
-                .base64Vista3D(base64Vista3D)
                 .success(true)
                 .message("Imagen 3D generada exitosamente")
                 .build();

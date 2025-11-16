@@ -17,9 +17,4 @@ public class GenerateImageRequestDTO {
     @NotNull(message = "El ID del diseño es obligatorio")
     private Integer disenoId;
 
-    @NotBlank(message = "La imagen base64 es obligatoria")
-    private String imagenBase64;
-
-    @Size(max = 500, message = "El prompt adicional no puede superar los 500 caracteres")
-    private String promptAdicional;
 }

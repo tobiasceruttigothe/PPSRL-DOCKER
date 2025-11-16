@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.paper.dto.*;
-import org.paper.services.StabilityAIService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,7 +72,7 @@ public class ImageGenerationController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/healthh")
+    @GetMapping("/health")
     @Operation(
             summary = "Verificar estado del servicio",
             description = "Verifica si el servicio de IA está operativo y puede conectarse a Gemini API"

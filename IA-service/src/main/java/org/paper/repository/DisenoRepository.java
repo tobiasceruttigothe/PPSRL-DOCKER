@@ -11,33 +11,5 @@ import java.util.UUID;
 @Repository
 public interface DisenoRepository extends JpaRepository<Diseno, Integer> {
 
-    /**
-     * Busca todos los diseños de un usuario
-     */
-    List<Diseno> findByUsuarioId(UUID usuarioId);
 
-    /**
-     * Busca diseños de un usuario por estado
-     */
-    List<Diseno> findByUsuarioIdAndStatus(UUID usuarioId, DisenoStatus status);
-
-    /**
-     * Busca diseños de una plantilla específica
-     */
-    List<Diseno> findByPlantillaId(Integer plantillaId);
-
-    /**
-     * Busca diseños por nombre (búsqueda parcial, case-insensitive)
-     */
-    List<Diseno> findByNombreContainingIgnoreCase(String nombre);
-
-    /**
-     * Cuenta los diseños de un usuario
-     */
-    long countByUsuarioId(UUID usuarioId);
-
-    /**
-     * Cuenta los diseños de un usuario por estado
-     */
-    long countByUsuarioIdAndStatus(UUID usuarioId, DisenoStatus status);
 }

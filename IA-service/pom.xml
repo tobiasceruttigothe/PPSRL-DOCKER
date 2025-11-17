@@ -23,6 +23,19 @@
         <google-cloud.version>26.37.0</google-cloud.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.41.0</version> <!-- última estable a hoy -->
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
@@ -75,25 +88,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Google Cloud Vertex AI (Imagen 3) -->
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-aiplatform</artifactId>
-            <version>3.35.0</version>
-        </dependency>
-
         <!-- Google Cloud Storage (para imágenes) -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-storage</artifactId>
             <version>2.29.1</version>
-        </dependency>
-
-        <!-- Google Auth Library -->
-        <dependency>
-            <groupId>com.google.auth</groupId>
-            <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.19.0</version>
         </dependency>
 
         <!-- Springdoc OpenAPI -->
@@ -118,30 +117,23 @@
 
 
 
+        <!-- IA-service/pom.xml -->
 
+        <!-- REEMPLAZAR las dependencias actuales de Vertex AI con estas: -->
 
+        <!-- Google GenAI SDK (nueva librería oficial) -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-vertexai</artifactId>
 
+        </dependency>
 
+        <!-- Google Auth (ya lo tienes, pero asegúrate de la versión) -->
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.23.0</version>
+
         </dependency>
-
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.11.0</version>
-        </dependency>
-
-
-
 
     </dependencies>
 

@@ -153,6 +153,11 @@ public class DisenoService {
             diseno.setBase64Diseno(dto.getBase64Diseno());
             log.debug("Imagen del diseño actualizada");
         }
+        if (dto.getBase64Preview() != null && !dto.getBase64Preview().isEmpty()) {
+            base64Validator.validateBase64ForPlantillaOrDiseno(dto.getBase64Preview(), dto.getNombre());
+            diseno.setBase64Preview(dto.getBase64Preview());
+            log.debug("Imagen de preview del diseño actualizada");
+        }
 
         // 5. Guardar
         Diseno updatedDiseno = disenoRepository.save(diseno);

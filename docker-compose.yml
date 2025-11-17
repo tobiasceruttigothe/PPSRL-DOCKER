@@ -27,7 +27,7 @@ services:
       kc-postgres:
         condition: service_healthy
     ports:
-      - "8080:8080"  # ✅ Expuesto: Los usuarios necesitan acceder al login
+      - "8080:8080"
     volumes:
       - ./tesina-realm.json:/opt/keycloak/data/import/tesina-realm.json:ro
     environment:
@@ -107,7 +107,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # Microservicio de proyectos - NO EXPUESTO (NUEVO)
+  # Microservicio de proyectos - NO EXPUESTO
   proyectos-service:
     build:
       context: ./Proyect-service
@@ -129,20 +129,44 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
   # Microservicio de IA - NO EXPUESTO
   ia-service:
     build:
       context: ./IA-service
       dockerfile: Dockerfile
     container_name: ia-service
+    depends_on:
+      app-postgres:
+        condition: service_healthy
     environment:
-      # Tu API Key de Google AI Studio
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-gen-lang-client-0295038721}
-      GEMINI_API_BASE_URL: https://generativelanguage.googleapis.com
-      GEMINI_MODEL: gemini-2.0-flash-exp
+      # ============================================
+      # GOOGLE CLOUD VERTEX AI CONFIGURATION
+      # ============================================
+      GOOGLE_CLOUD_PROJECT_ID: ppsrl-477823
+      GOOGLE_CLOUD_LOCATION: us-central1
+      # Ruta DENTRO del contenedor (montada desde volume)
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/credentials.json
+      
+      # ============================================
+      # DATABASE CONFIGURATION
+      # ============================================
+      SPRING_DATASOURCE_URL: jdbc:postgresql://app-postgres:5432/appdb
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: apppass
+      
+      # ============================================
+      # JVM OPTIONS
+      # ============================================
       JAVA_OPTS: "-Xms256m -Xmx512m"
+    
+    # ⚠️ IMPORTANTE: Montar el archivo credentials.json
+    volumes:
+      - ./credentials.json:/app/credentials/credentials.json:ro
+    
     networks:
       - backend-network
+    
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9093/actuator/health || exit 1"]
       interval: 30s
@@ -162,7 +186,7 @@ services:
       proyectos-service:
         condition: service_healthy
     ports:
-      - "9090:9090"  # ✅ Expuesto: Punto de entrada único a la API
+      - "9090:9090"
     environment:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/tesina/protocol/openid-connect/certs
       API_GW_URL_MICROSERVICIO_USUARIOS: http://users-service:9091

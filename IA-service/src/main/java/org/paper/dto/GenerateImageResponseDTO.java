@@ -1,5 +1,6 @@
 package org.paper.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,6 @@ public class GenerateImageResponseDTO {
     private String message;
     private String errorDetails;
 
-    // Constructor de conveniencia para respuestas exitosas
     public static GenerateImageResponseDTO success(Integer disenoId) {
         return GenerateImageResponseDTO.builder()
                 .disenoId(disenoId)
@@ -25,7 +25,6 @@ public class GenerateImageResponseDTO {
                 .build();
     }
 
-    // Constructor de conveniencia para errores
     public static GenerateImageResponseDTO error(Integer disenoId, String message, String errorDetails) {
         return GenerateImageResponseDTO.builder()
                 .disenoId(disenoId)

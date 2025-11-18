@@ -43,37 +43,49 @@ public class GeminiImageService {
     static {
         PROMPTS.put(TipoBolsaEnum.FONDO_AMERICANO,
                 """
-                Transform this flat bag design into a professional 3D product mockup of a kraft paper shopping bag with American bottom style.
-                
-                Requirements:
-                - Standing upright on a clean white surface with soft studio lighting
-                - American bottom construction with rectangular base and 4 folded corners clearly visible
-                - Natural brown kraft paper texture with realistic fiber details
-                - Apply the EXACT design from the reference image onto the front of the bag, maintaining all colors, logos, and graphics
-                - Realistic shadows cast on the surface beneath
-                - Professional commercial photography quality
-                - Photorealistic 3D visualization with studio lighting
-                
-                IMPORTANT: Keep the design from the reference image exactly as shown, just render it on a 3D bag.
+                Generate a photorealistic 3D rendering of a paper bag.
+
+                IMPORTANT: The bag must have a V-shaped folded bottom.
+                The bottom is NOT flat.
+                The bottom folds into two triangular flaps forming a V shape.
+
+                The bag should be:
+                - Standing upright
+                - Mouth of the bag OPEN
+                - Seen in perspective at about 30 to 45 degrees
+                - Natural brown kraft paper with visible fibers
+
+                Apply this exact printed design to the bag:
+
+                Do not change colors, proportions, or layout.
+
+                Lighting and environment:
+                - Clean white studio backdrop
+                - Soft studio lighting
+                - Realistic shadows under the bag
+                - Subtle depth of field
+                - High resolution product photo quality
+
+                Make sure the V-shaped folded bottom is clearly visible.
+                It should look like a sandwich bag or French fries paper bag, not a flat-bottom box-style bag.
                 """
         );
 
         PROMPTS.put(TipoBolsaEnum.FONDO_CUADRADO_CON_MANIJA,
                 """
-                Transform this flat bag design into a professional 3D product mockup of a kraft paper shopping bag with square bottom and twisted paper handles.
-                
+                Transform this flat bag design into a professional 3D mockup of a kraft paper bag with a square base and twisted paper handles.
+
                 Requirements:
-                - Standing upright on a clean white surface with soft studio lighting
-                - Square flat bottom base with clean fold lines
-                - Twisted kraft paper handles attached to the top, hanging naturally
-                - Natural brown kraft paper texture with realistic fiber details
-                - Apply the EXACT design from the reference image onto the front of the bag, maintaining all colors, logos, and graphics
-                - Handles should show realistic paper twist texture and proper attachment points
-                - Realistic shadows cast on the surface beneath and under the handles
-                - Professional commercial photography quality
-                - Photorealistic 3D visualization with studio lighting
-                
-                IMPORTANT: Keep the design from the reference image exactly as shown, just render it on a 3D bag with handles.
+                - Place the bag upright on a clean, white surface with soft studio lighting.
+                - Square, flat base with defined creases.
+                - Twisted kraft paper handles attached at the top, hanging naturally.
+                - Natural brown kraft paper texture with realistic fiber details.
+                - Apply the EXACT design from the reference image, respecting and preserving the distribution of all colors, logos, and graphics (correctly interpreting what goes on the front, back, or gusset).
+                - The handles must show a realistic paper twist texture and appropriate attachment points.
+                - Realistic shadows cast on the surface, under the handles, and on the bottom.
+                - Professional, commercial-quality photography.
+                - Photorealistic 3D rendering with studio lighting.
+                IMPORTANT: Keep the reference image design exactly as shown; simply render it as a 3D bag with handles.
                 """
         );
 
@@ -191,7 +203,7 @@ public class GeminiImageService {
 
             // Obtener prompt según tipo de bolsa
             String prompt = PROMPTS.get(tipoBolsa);
-            log.info("📝 Prompt: {}", prompt.substring(0, Math.min(150, prompt.length())) + "...");
+            log.info("📝 Prompt: {}", prompt.substring(0, Math.min(1500, prompt.length())) + "...");
 
             // Limpiar base64 (remover prefijo data:image/...)
             String cleanBase64 = cleanBase64(base64Preview);

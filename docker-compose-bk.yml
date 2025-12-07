@@ -182,20 +182,6 @@ services:
       retries: 3
       start_period: 60s
 
-  frontend-service:
-    build:
-      context: ../disenador-de-bolsas
-      dockerfile: Dockerfile
-    container_name: frontend-service
-    ports:
-    - "5173:80" # Mapeamos el puerto 80 del Nginx al 5173 de tu máquina
-    depends_on:
-      api-gateway:
-        condition: service_healthy
-    networks:
-      - backend-network
-
-
 networks:
   backend-network:
     driver: bridge
@@ -203,4 +189,3 @@ networks:
 volumes:
   kc_pgdata:
   app_pgdata:
-

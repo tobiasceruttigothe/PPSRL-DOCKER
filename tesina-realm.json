@@ -90,6 +90,33 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "frontend-service",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "protocolMappers": [
+        {
+          "name": "razonSocial",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "razonSocial",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "razonSocial",
+            "jsonType.label": "String"
+          }
+        }
+      ]
     }
   ],
   "users": [

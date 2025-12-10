@@ -566,4 +566,58 @@ public class DisenoController {
         );
     }
 
+    //crear dos endpoints para modificar el nombre y la descripcion de un diseno por separado
+
+    @PatchMapping("/{id}/nombre")
+    @Operation(
+            summary = "Actualizar el nombre de un diseño",
+            description = "Actualiza únicamente el nombre de un diseño existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Nombre actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Diseño no encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<DisenoResponseDto>> actualizarNombre(
+            @Parameter(description = "ID del diseño", required = true)
+            @PathVariable Integer id,
+            @Parameter(description = "Nuevo nombre", required = true, example = "Nuevo nombre de diseño")
+            @RequestBody String nuevoNombre) {
+
+        log.info("Request: Actualizar nombre del diseño {} a '{}'", id, nuevoNombre);
+
+        // Se asume que DisenoService tiene un método updateNombre(Integer id, String nuevoNombre)
+        DisenoResponseDto diseno = disenoService.updateNombre(id, nuevoNombre);
+
+        return ResponseEntity.ok(SuccessResponse.of("Nombre actualizado exitosamente", diseno));
+    }
+
+    @PatchMapping("/{id}/descripcion")
+    @Operation(
+            summary = "Actualizar la descripción de un diseño",
+            description = "Actualiza únicamente la descripción de un diseño existente."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Descripción actualizada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Diseño no encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SuccessResponse<DisenoResponseDto>> actualizarDescripcion(
+            @Parameter(description = "ID del diseño", required = true)
+            @PathVariable Integer id,
+            @Parameter(description = "Nueva descripción", required = true, example = "Descripción actualizada")
+            @RequestBody String nuevaDescripcion) {
+
+        log.info("Request: Actualizar descripción del diseño {}", id);
+
+        // Se asume que DisenoService tiene un método updateDescripcion(Integer id, String nuevaDescripcion)
+        DisenoResponseDto diseno = disenoService.updateDescripcion(id, nuevaDescripcion);
+
+        return ResponseEntity.ok(SuccessResponse.of("Descripción actualizada exitosamente", diseno));
+    }
+
+
+
+
 }
+

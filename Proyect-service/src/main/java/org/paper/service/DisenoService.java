@@ -368,6 +368,67 @@ public class DisenoService {
         return disenoRepository.countByUsuarioIdAndStatus(usuarioId, status);
     }
 
+    /**
+     * Actualiza únicamente el nombre de un diseño
+     */
+    @Transactional
+    public DisenoResponseDto updateNombre(Integer id, String nuevoNombre) {
+        log.info("Actualizando nombre del diseño {} a: {}", id, nuevoNombre);
+
+        Diseno diseno = disenoRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Diseño no encontrado: {}", id);
+                    return new EntityNotFoundException("Diseño", id);
+                });
+
+        if (diseno.getStatus() == DisenoStatus.TERMINADO) {
+            log.error("No se puede actualizar el nombre de un diseño en estado TERMINADO: {}", id);
+            throw new InvalidStateException("Diseño", "TERMINADO", "actualizar");
+        }
+
+        // Validación mínima de entrada
+        if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {
+            log.error("Nombre inválido proporcionado para el diseño {}", id);
+            throw new IllegalArgumentException("Nombre inválido");
+        }
+
+        diseno.setNombre(nuevoNombre.trim());
+        diseno.setFechaActualizacion(LocalDateTime.now());
+
+        Diseno updated = disenoRepository.save(diseno);
+
+        log.info("Nombre del diseño {} actualizado correctamente", id);
+        return mapToResponseDto(updated);
+    }
+
+    /**
+     * Actualiza únicamente la descripción de un diseño
+     */
+    @Transactional
+    public DisenoResponseDto updateDescripcion(Integer id, String nuevaDescripcion) {
+        log.info("Actualizando descripción del diseño {}", id);
+
+        Diseno diseno = disenoRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Diseño no encontrado: {}", id);
+                    return new EntityNotFoundException("Diseño", id);
+                });
+
+        if (diseno.getStatus() == DisenoStatus.TERMINADO) {
+            log.error("No se puede actualizar la descripción de un diseño en estado TERMINADO: {}", id);
+            throw new InvalidStateException("Diseño", "TERMINADO", "actualizar");
+        }
+
+        // Permitir descripción vacía, pero normalizar nulls
+        diseno.setDescripcion(nuevaDescripcion == null ? "" : nuevaDescripcion.trim());
+        diseno.setFechaActualizacion(LocalDateTime.now());
+
+        Diseno updated = disenoRepository.save(diseno);
+
+        log.info("Descripción del diseño {} actualizada correctamente", id);
+        return mapToResponseDto(updated);
+    }
+
     // ==================== MÉTODOS PRIVADOS ====================
 
     /**

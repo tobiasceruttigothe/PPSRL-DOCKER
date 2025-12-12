@@ -112,29 +112,9 @@ class DisenoControllerTest {
         verify(disenoService).update(eq(1), any(DisenoUpdateDto.class));
     }
 
-    @Test
-    void marcarComoTerminado_DeberiaRetornar200() throws Exception {
-        // Arrange
-        when(disenoService.marcarComoTerminado(1)).thenReturn(disenoResponseDto);
 
-        // Act & Assert
-        mockMvc.perform(patch("/api/disenos/{id}/terminar", 1))
-                .andExpect(status().isOk());
 
-        verify(disenoService).marcarComoTerminado(1);
-    }
 
-    @Test
-    void marcarComoEnProgreso_DeberiaRetornar200() throws Exception {
-        // Arrange
-        when(disenoService.marcarComoEnProgreso(1)).thenReturn(disenoResponseDto);
-
-        // Act & Assert
-        mockMvc.perform(patch("/api/disenos/{id}/reabrir", 1))
-                .andExpect(status().isOk());
-
-        verify(disenoService).marcarComoEnProgreso(1);
-    }
 
     @Test
     void eliminarDiseno_DeberiaRetornar200() throws Exception {

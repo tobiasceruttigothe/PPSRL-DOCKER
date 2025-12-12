@@ -14,4 +14,5 @@ public class UsuarioResponseDTO {
     private String email;
     private String razonSocial;
     private List<String> roles;
+    private String disenadorId;
 }

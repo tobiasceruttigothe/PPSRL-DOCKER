@@ -170,6 +170,8 @@ public class DisenoService {
     /**
      * Marca un diseño como terminado
      */
+
+    /*
     @Transactional
     public DisenoResponseDto marcarComoTerminado(Integer id) {
         log.info("Marcando diseño {} como TERMINADO", id);
@@ -196,9 +198,12 @@ public class DisenoService {
         return mapToResponseDto(updatedDiseno);
     }
 
+     */
+
     /**
      * Marca un diseño como en progreso (reabrir)
      */
+    /*
     @Transactional
     public DisenoResponseDto marcarComoEnProgreso(Integer id) {
         log.info("Marcando diseño {} como EN PROGRESO", id);
@@ -224,6 +229,8 @@ public class DisenoService {
 
         return mapToResponseDto(updatedDiseno);
     }
+
+     */
 
     /**
      * Elimina un diseño
@@ -427,6 +434,31 @@ public class DisenoService {
 
         log.info("Descripción del diseño {} actualizada correctamente", id);
         return mapToResponseDto(updated);
+    }
+
+    @Transactional
+    public DisenoResponseDto cambiarEstado(Integer id, DisenoStatus nuevoEstado) {
+        log.info("Cambiando estado del diseño {} a {}", id, nuevoEstado);
+
+        Diseno diseno = disenoRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Diseño no encontrado: {}", id);
+                    return new EntityNotFoundException("Diseño", id);
+                });
+
+        // Validar si el estado actual es igual al nuevo para evitar escrituras innecesarias
+        if (diseno.getStatus() == nuevoEstado) {
+            log.warn("El diseño {} ya se encuentra en estado {}", id, nuevoEstado);
+            return mapToResponseDto(diseno);
+        }
+
+        diseno.setStatus(nuevoEstado);
+        diseno.setFechaActualizacion(LocalDateTime.now());
+
+        Diseno updatedDiseno = disenoRepository.save(diseno);
+
+        log.info("Estado del diseño {} actualizado exitosamente a {}", id, nuevoEstado);
+        return mapToResponseDto(updatedDiseno);
     }
 
     // ==================== MÉTODOS PRIVADOS ====================

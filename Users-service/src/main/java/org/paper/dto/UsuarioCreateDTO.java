@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,4 +40,6 @@ public class UsuarioCreateDTO {
 
     @Builder.Default
     private boolean emailVerified = false;
+
+    private UUID disenadorId;
 }

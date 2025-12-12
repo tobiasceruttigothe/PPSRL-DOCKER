@@ -183,7 +183,7 @@ public class DisenoController {
                 SuccessResponse.of("Diseño actualizado exitosamente", diseno)
         );
     }
-
+/*
     @PatchMapping("/{id}/terminar")
     @Operation(
             summary = "Marcar diseño como terminado",
@@ -259,6 +259,8 @@ public class DisenoController {
                 SuccessResponse.of("Diseño reabierto", diseno)
         );
     }
+
+ */
 
     @DeleteMapping("/{id}")
     @Operation(
@@ -566,8 +568,6 @@ public class DisenoController {
         );
     }
 
-    //crear dos endpoints para modificar el nombre y la descripcion de un diseno por separado
-
     @PatchMapping("/{id}/nombre")
     @Operation(
             summary = "Actualizar el nombre de un diseño",
@@ -586,7 +586,6 @@ public class DisenoController {
 
         log.info("Request: Actualizar nombre del diseño {} a '{}'", id, nuevoNombre);
 
-        // Se asume que DisenoService tiene un método updateNombre(Integer id, String nuevoNombre)
         DisenoResponseDto diseno = disenoService.updateNombre(id, nuevoNombre);
 
         return ResponseEntity.ok(SuccessResponse.of("Nombre actualizado exitosamente", diseno));
@@ -610,10 +609,51 @@ public class DisenoController {
 
         log.info("Request: Actualizar descripción del diseño {}", id);
 
-        // Se asume que DisenoService tiene un método updateDescripcion(Integer id, String nuevaDescripcion)
         DisenoResponseDto diseno = disenoService.updateDescripcion(id, nuevaDescripcion);
 
         return ResponseEntity.ok(SuccessResponse.of("Descripción actualizada exitosamente", diseno));
+    }
+
+    @PatchMapping("/{id}/estado")
+    @Operation(
+            summary = "Cambiar estado de un diseño",
+            description = """
+            Actualiza el estado de un diseño.
+            
+            **Estados disponibles:**
+            - `PROGRESO`: El diseño está en edición.
+            - `TERMINADO`: El diseño está finalizado y listo para producción.
+            """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Estado actualizado exitosamente"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Estado inválido o transición no permitida",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Diseño no encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    public ResponseEntity<SuccessResponse<DisenoResponseDto>> cambiarEstado(
+            @Parameter(description = "ID del diseño", required = true, example = "1")
+            @PathVariable Integer id,
+            @Parameter(description = "Nuevo estado", required = true, schema = @Schema(implementation = DisenoStatus.class))
+            @RequestParam DisenoStatus estado) {
+
+        log.info("Request: Cambiar estado del diseño {} a {}", id, estado);
+
+        DisenoResponseDto diseno = disenoService.cambiarEstado(id, estado);
+
+        return ResponseEntity.ok(
+                SuccessResponse.of("Estado del diseño actualizado exitosamente", diseno)
+        );
     }
 
 

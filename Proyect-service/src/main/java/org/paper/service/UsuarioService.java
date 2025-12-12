@@ -22,5 +22,4 @@ public class UsuarioService {
         return usuarioRepository.findById(uuid).orElse(null);
     }
 
-
 }

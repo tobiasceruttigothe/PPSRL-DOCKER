@@ -156,45 +156,7 @@ class DisenoServiceTest {
         verify(disenoRepository, never()).save(any());
     }
 
-    @Test
-    void marcarComoTerminado_DeberiaActualizarEstado() {
-        // Arrange
-        when(disenoRepository.findById(1)).thenReturn(Optional.of(diseno));
-        when(disenoRepository.save(any(Diseno.class))).thenReturn(diseno);
 
-        // Act
-        DisenoResponseDto result = disenoService.marcarComoTerminado(1);
-
-        // Assert
-        assertNotNull(result);
-        verify(disenoRepository).save(any(Diseno.class));
-    }
-
-    @Test
-    void marcarComoTerminado_DeberiaLanzarExcepcion_CuandoYaEstaTerminado() {
-        // Arrange
-        diseno.setStatus(DisenoStatus.TERMINADO);
-        when(disenoRepository.findById(1)).thenReturn(Optional.of(diseno));
-
-        // Act & Assert
-        assertThrows(InvalidStateException.class, () -> disenoService.marcarComoTerminado(1));
-        verify(disenoRepository, never()).save(any());
-    }
-
-    @Test
-    void marcarComoEnProgreso_DeberiaActualizarEstado() {
-        // Arrange
-        diseno.setStatus(DisenoStatus.TERMINADO);
-        when(disenoRepository.findById(1)).thenReturn(Optional.of(diseno));
-        when(disenoRepository.save(any(Diseno.class))).thenReturn(diseno);
-
-        // Act
-        DisenoResponseDto result = disenoService.marcarComoEnProgreso(1);
-
-        // Assert
-        assertNotNull(result);
-        verify(disenoRepository).save(any(Diseno.class));
-    }
 
     @Test
     void deleteById_DeberiaEliminarDiseno() {

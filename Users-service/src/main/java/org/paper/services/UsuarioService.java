@@ -72,7 +72,19 @@ public class UsuarioService {
             cambiarRolUsuario(userId, usuario.getRol(), token);
 
             // 3. Guardar en la base de datos con estado PENDING (pendiente de activación)
-            Usuario entity = new Usuario(UUID.fromString(userId), OffsetDateTime.now(), UsuarioStatus.PENDING);
+            Usuario entity = new Usuario();
+            entity.setId(UUID.fromString(userId));
+            entity.setFechaRegistro(OffsetDateTime.now());
+            entity.setStatus(UsuarioStatus.PENDING);
+
+            // NUEVA LÓGICA: Asignación de Diseñador
+            if (usuario.getDisenadorId() != null) {
+                // Solo permitimos asignar si el usuario nuevo es CLIENTE
+                if (!"CLIENTE".equals(usuario.getRol())) {
+                    throw new ValidationException("rol", "Solo se puede asignar un diseñador a usuarios con rol CLIENTE");
+                }
+                validarYAsignarDisenador(entity, usuario.getDisenadorId(), token);
+            }
             usuarioRepository.save(entity);
             log.info("Usuario {} guardado en BD con estado PENDING", usuario.getUsername());
 
@@ -100,6 +112,68 @@ public class UsuarioService {
             throw new KeycloakException("configurar usuario", "Error al configurar el usuario recién creado", e);
         }
     }
+
+
+    /**
+     * NUEVO: Reasignar o cambiar el diseñador de un cliente existente
+     */
+    @Transactional
+    public void asignarODesaignarDisenador(String clienteId, UUID nuevoDisenadorId) {
+        String token = keycloakAdminService.getAdminToken();
+
+        // 1. Buscar al cliente
+        Usuario cliente = usuarioRepository.findById(UUID.fromString(clienteId))
+                .orElseThrow(() -> new UsuarioNotFoundException("Cliente no encontrado en BD local"));
+
+        // 2. Si viene null, desasignamos (borramos la relación)
+        if (nuevoDisenadorId == null) {
+            cliente.setDisenador(null);
+            usuarioRepository.save(cliente);
+            log.info("Diseñador desasignado para el cliente {}", clienteId);
+            return;
+        }
+
+        // 3. Validar y asignar el nuevo diseñador
+        validarYAsignarDisenador(cliente, nuevoDisenadorId, token);
+        usuarioRepository.save(cliente);
+        log.info("Diseñador {} asignado al cliente {}", nuevoDisenadorId, clienteId);
+    }
+
+    /**
+     * NUEVO: Listar clientes de un diseñador específico
+     */
+    public List<UsuarioResponseDTO> listarMisClientes(String disenadorId) {
+        String token = keycloakAdminService.getAdminToken();
+
+        // Buscar en BD local usando la relación
+        List<Usuario> clientes = usuarioRepository.findByDisenadorId(UUID.fromString(disenadorId));
+
+        // Convertir a DTOs trayendo datos de Keycloak
+        return clientes.stream().map(cliente -> {
+            Map<String, Object> kcUser = keycloakClient.obtenerUsuarioPorId(cliente.getId().toString(), token);
+            return mapearUsuarioResponse(kcUser, token);
+        }).collect(Collectors.toList());
+    }
+
+    // --- MÉTODOS PRIVADOS ---
+
+    private void validarYAsignarDisenador(Usuario clienteEntity, UUID disenadorId, String token) {
+        // Verificar que el diseñador existe en BD local
+        Usuario disenadorEntity = usuarioRepository.findById(disenadorId)
+                .orElseThrow(() -> new ValidationException("disenadorId", "El diseñador con ID " + disenadorId + " no existe"));
+
+        // Verificar en Keycloak que tenga el rol DISEÑADOR
+        List<Map<String, Object>> roles = keycloakClient.listarRolesDeUsuario(disenadorId.toString(), token);
+        boolean esDisenador = roles.stream().anyMatch(r -> "DISEÑADOR".equals(r.get("name")));
+
+        if (!esDisenador) {
+            throw new ValidationException("disenadorId", "El usuario asignado no tiene el rol de DISEÑADOR");
+        }
+
+        clienteEntity.setDisenador(disenadorEntity);
+    }
+
+
 
     /**
      * Elimina un usuario del sistema
@@ -221,13 +295,20 @@ public class UsuarioService {
                 razonSocial = rsList.get(0);
             }
         }
+        // Buscar info local para ver si tiene diseñador
+        Usuario usuarioLocal = usuarioRepository.findById(UUID.fromString(userId)).orElse(null);
+        String disenadorId = (usuarioLocal != null && usuarioLocal.getDisenador() != null)
+                ? usuarioLocal.getDisenador().getId().toString()
+                : null;
 
         return new UsuarioResponseDTO(
                 userId,
                 (String) user.get("username"),
                 (String) user.get("email"),
                 razonSocial,
-                roles
+                roles,
+                disenadorId
+
         );
     }
 }

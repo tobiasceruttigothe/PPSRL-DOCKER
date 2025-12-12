@@ -15,10 +15,12 @@ import org.paper.dto.UsuarioCreateDTO;
 import org.paper.dto.UsuarioResponseDTO;
 import org.paper.repository.UsuarioRepository;
 import org.paper.services.UsuarioService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -267,4 +269,89 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioResponseDTO>> listarUsuariosAdmins() {
         return usuarioService.listarUsuariosPorRol("ADMIN");
     }
+
+
+    @GetMapping("/clientes-asignados") // Renombrado para ser más semántico (ya no son siempre "mis")
+    @Operation(
+            summary = "Listar clientes asignados a un diseñador",
+            description = """
+            Retorna los clientes asignados a un diseñador específico.
+            
+            **Reglas de acceso:**
+            - **DISEÑADOR:** Por defecto retorna *sus propios* clientes. Si envía un ID distinto al suyo, se bloquea (403).
+            - **ADMIN:** Debe enviar el parámetro `disenadorId` para especificar qué lista quiere ver.
+            """
+    )
+    public ResponseEntity<List<UsuarioResponseDTO>> listarClientesAsignados(
+            @Parameter(hidden = true) @RequestHeader(value = "X-User-Id", required = false) String requesterId,
+            @Parameter(hidden = true) @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @Parameter(description = "ID del diseñador a consultar (Obligatorio para ADMIN, opcional para DISEÑADOR)")
+            @RequestParam(required = false) String disenadorId) {
+
+        // 1. Validar roles básicos
+        boolean isAdmin = roles != null && roles.contains("ADMIN");
+        boolean isDisenador = roles != null && roles.contains("DISEÑADOR");
+
+        if (!isAdmin && !isDisenador) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String targetId;
+
+        // 2. Lógica de selección del ID objetivo
+        if (isAdmin) {
+            // Si es ADMIN, es OBLIGATORIO que diga a quién quiere consultar
+            if (disenadorId == null || disenadorId.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            targetId = disenadorId;
+        } else {
+            // Si es DISEÑADOR
+            // Si intenta ver los de otro (manda param distinto a su header), 403 Forbidden
+            if (disenadorId != null && !disenadorId.equals(requesterId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            // Si no manda nada o manda su propio ID, usamos su ID del token
+            targetId = requesterId;
+        }
+
+        // Validación final por si acaso
+        if (targetId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // 3. Consultar servicio
+        List<UsuarioResponseDTO> clientes = usuarioService.listarMisClientes(targetId);
+        return ResponseEntity.ok(clientes);
+    }
+
+    @PutMapping("/{clienteId}/asignar-disenador/{disenadorId}")
+    @Operation(
+            summary = "Asignar o cambiar diseñador",
+            description = """
+            Asigna un diseñador a un cliente existente. Si ya tenía uno, lo reemplaza.
+            **Requiere rol ADMIN.**
+            """
+    )
+    public ResponseEntity<String> asignarDisenador(
+            @Parameter(description = "ID del Cliente") @PathVariable String clienteId,
+            @Parameter(description = "ID del Diseñador") @PathVariable UUID disenadorId) {
+
+        usuarioService.asignarODesaignarDisenador(clienteId, disenadorId);
+        return ResponseEntity.ok("Diseñador asignado correctamente al cliente");
+    }
+
+    @DeleteMapping("/{clienteId}/asignar-disenador")
+    @Operation(
+            summary = "Desasignar diseñador",
+            description = "Quita el diseñador asignado a un cliente. **Requiere rol ADMIN.**"
+    )
+    public ResponseEntity<String> desasignarDisenador(
+            @PathVariable String clienteId) {
+
+        usuarioService.asignarODesaignarDisenador(clienteId, null);
+        return ResponseEntity.ok("Diseñador desasignado correctamente");
+    }
+
+
 }

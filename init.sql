@@ -10,14 +10,20 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id UUID PRIMARY KEY,
     fecha_registro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    disenador_id UUID,
     
-    CONSTRAINT chk_usuarios_status CHECK (status IN ('PENDING', 'ACTIVE', 'FAILED'))
+    CONSTRAINT chk_usuarios_status CHECK (status IN ('PENDING', 'ACTIVE', 'FAILED')),
+    
+    CONSTRAINT fk_usuario_disenador 
+        FOREIGN KEY (disenador_id) 
+        REFERENCES usuarios(id) 
+        ON DELETE SET NULL
 );
 
 -- Índices para mejorar performance
 CREATE INDEX IF NOT EXISTS idx_usuarios_status ON usuarios(status);
 CREATE INDEX IF NOT EXISTS idx_usuarios_fecha_registro ON usuarios(fecha_registro);
-
+CREATE INDEX IF NOT EXISTS idx_usuarios_disenador ON usuarios(disenador_id);
 -- ============================================
 -- TABLA: materiales
 -- ============================================
@@ -124,7 +130,7 @@ CREATE TABLE IF NOT EXISTS disenos (
         ON DELETE RESTRICT,
     
     CONSTRAINT chk_disenos_estado 
-        CHECK (estado IN ('PROGRESO', 'TERMINADO'))
+        CHECK (estado IN ('PROGRESO', 'TERMINADO', 'CANCELADO'))
 );
 
 -- Índices

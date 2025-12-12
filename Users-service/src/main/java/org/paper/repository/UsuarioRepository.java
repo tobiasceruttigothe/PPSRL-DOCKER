@@ -1,7 +1,6 @@
 package org.paper.repository;
 
 import org.paper.entity.Usuario;
-import org.paper.entity.UsuarioStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
+    // Buscar usuarios asignados a un diseñador específico
+    List<Usuario> findByDisenadorId(UUID disenadorId);
 }

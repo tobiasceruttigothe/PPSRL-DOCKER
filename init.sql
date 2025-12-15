@@ -171,21 +171,22 @@ CREATE INDEX IF NOT EXISTS idx_usuario_plantilla_plantilla_id ON usuario_plantil
 -- Materiales iniciales
 INSERT INTO materiales (nombre) 
 VALUES 
-    ('Papel Kraft'),
-    ('Papel Blanco'),
-    ('Papel Reciclado'),
-    ('Cartón Corrugado'),
-    ('Polipropileno')
+    ('Papel Kraft Reciclado'),
+    ('Papel Sulfito'),
+    ('Papel Sulfito Parafinado'),
+    ('Papel Antigrasa'),
+    ('Papel Ilustración'),
+    ('Papel Bióxido')
 ON CONFLICT (nombre) DO NOTHING;
 
 -- Tipos de bolsa iniciales
 INSERT INTO tipos_bolsa (nombre) 
 VALUES 
-    ('Bolsa con Asa'),
-    ('Bolsa Sin Asa'),
-    ('Bolsa Americana'),
-    ('Bolsa Camiseta'),
-    ('Bolsa Boutique')
+    ('Bolsa Fondo Americano'),
+    ('Bolsa Fondo Cuadrado con Manija'),
+    ('Mantel Individual'),
+    ('Envoltorio Cuadrado'),
+    ('Envoltorio Rectangular')
 ON CONFLICT (nombre) DO NOTHING;
 
 -- ============================================
